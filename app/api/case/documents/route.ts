@@ -18,13 +18,98 @@ const delay = (ms: number) =>
     setTimeout(resolve, ms);
   });
 
+const fetchWithRetry = async ({
+  requestId,
+  targetUrl,
+  startedAt,
+}: {
+  requestId: string;
+  targetUrl: string;
+  startedAt: string;
+}) => {
+  let lastError: Error | null = null;
+  let lastUpstreamStatus: number | null = null;
+
+  for (let attempt = 0; attempt < RETRY_DELAYS_MS.length; attempt += 1) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), CASE_API_TIMEOUT_MS);
+
+    try {
+      const response = await fetch(targetUrl, {
+        method: "GET",
+        headers: {
+          accept: "application/json",
+        },
+        cache: "no-store",
+        signal: controller.signal,
+      });
+
+      if (RETRY_STATUS_CODES.has(response.status)) {
+        lastUpstreamStatus = response.status;
+        if (attempt < RETRY_DELAYS_MS.length - 1) {
+          console.warn("Documents request retrying after upstream error.", {
+            requestId,
+            targetUrl,
+            startedAt,
+            upstreamStatus: response.status,
+            attempt: attempt + 1,
+          });
+          await delay(RETRY_DELAYS_MS[attempt]);
+          continue;
+        }
+        return { response: null, lastError, lastUpstreamStatus };
+      }
+
+      return { response, lastError: null, lastUpstreamStatus: null };
+    } catch (error) {
+      const errorObject =
+        error instanceof Error ? error : new Error("Proxy error");
+      const errorCode =
+        (errorObject as NodeJS.ErrnoException).code ??
+        (errorObject as { cause?: { code?: string } }).cause?.code;
+      const isNetworkError =
+        errorObject.name === "AbortError" ||
+        errorCode === "ECONNRESET" ||
+        errorCode === "ETIMEDOUT";
+
+      if (isNetworkError) {
+        lastError = errorObject;
+        if (attempt < RETRY_DELAYS_MS.length - 1) {
+          console.warn("Documents request retrying after network error.", {
+            requestId,
+            targetUrl,
+            startedAt,
+            errorCode,
+            errorName: errorObject.name,
+            errorMessage: errorObject.message,
+            attempt: attempt + 1,
+          });
+          await delay(RETRY_DELAYS_MS[attempt]);
+          continue;
+        }
+
+        return { response: null, lastError, lastUpstreamStatus };
+      }
+
+      return {
+        response: null,
+        lastError: errorObject,
+        lastUpstreamStatus: null,
+        nonRetryableError: errorObject,
+      };
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
+
+  return { response: null, lastError, lastUpstreamStatus };
+};
+
 export async function GET(request: Request) {
   const requestId = crypto.randomUUID();
   const requestStartedAt = Date.now();
   const requestStartedAtIso = new Date(requestStartedAt).toISOString();
   let targetUrlString = DOCUMENTS_URL;
-  let lastError: Error | null = null;
-  let lastUpstreamStatus: number | null = null;
   const queueStartedAt = Date.now();
   const acquired = await caseApiSemaphore.acquire(CASE_API_QUEUE_TIMEOUT_MS);
 
@@ -73,127 +158,56 @@ export async function GET(request: Request) {
       queueDurationMs,
     });
 
-    for (let attempt = 0; attempt < RETRY_DELAYS_MS.length; attempt += 1) {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(
-        () => controller.abort(),
-        CASE_API_TIMEOUT_MS,
+    const { response, lastError, lastUpstreamStatus, nonRetryableError } =
+      await fetchWithRetry({
+        requestId,
+        targetUrl: targetUrlString,
+        startedAt: requestStartedAtIso,
+      });
+
+    if (nonRetryableError) {
+      console.error("Documents request failed.", {
+        requestId,
+        targetUrl: targetUrlString,
+        startedAt: requestStartedAtIso,
+        completedAt: new Date().toISOString(),
+        durationMs: Date.now() - requestStartedAt,
+        errorName: nonRetryableError.name,
+        errorMessage: nonRetryableError.message,
+        errorStack: nonRetryableError.stack,
+      });
+
+      return NextResponse.json(
+        {
+          error: nonRetryableError.message || "Proxy error",
+          requestId,
+          upstreamStatus: null,
+        },
+        { status: 500 },
       );
+    }
 
-      try {
-        const response = await fetch(targetUrlString, {
-          method: "GET",
-          headers: {
-            accept: "application/json",
-          },
-          cache: "no-store",
-          signal: controller.signal,
-        });
+    if (response) {
+      const body = response.body ?? (await response.text());
+      const completedAt = new Date().toISOString();
+      const durationMs = Date.now() - requestStartedAt;
 
-        if (
-          RETRY_STATUS_CODES.has(response.status) &&
-          attempt < RETRY_DELAYS_MS.length - 1
-        ) {
-          lastUpstreamStatus = response.status;
-          console.warn("Documents request retrying after upstream error.", {
-            requestId,
-            targetUrl: targetUrlString,
-            startedAt: requestStartedAtIso,
-            upstreamStatus: response.status,
-            attempt: attempt + 1,
-          });
-          await delay(RETRY_DELAYS_MS[attempt]);
-          continue;
-        }
+      console.info("Documents request completed.", {
+        requestId,
+        targetUrl: targetUrlString,
+        startedAt: requestStartedAtIso,
+        completedAt,
+        durationMs,
+        upstreamStatus: response.status,
+      });
 
-        if (RETRY_STATUS_CODES.has(response.status)) {
-          lastUpstreamStatus = response.status;
-          break;
-        }
-
-        const body = response.body ?? (await response.text());
-        const completedAt = new Date().toISOString();
-        const durationMs = Date.now() - requestStartedAt;
-
-        console.info("Documents request completed.", {
-          requestId,
-          targetUrl: targetUrlString,
-          startedAt: requestStartedAtIso,
-          completedAt,
-          durationMs,
-          upstreamStatus: response.status,
-        });
-
-        return new NextResponse(body, {
-          status: response.status,
-          headers: {
-            "content-type":
-              response.headers.get("content-type") ?? "application/json",
-          },
-        });
-      } catch (error) {
-        const errorObject =
-          error instanceof Error ? error : new Error("Proxy error");
-        const errorCode =
-          (errorObject as NodeJS.ErrnoException).code ??
-          (errorObject as { cause?: { code?: string } }).cause?.code;
-        const isNetworkError =
-          errorObject.name === "AbortError" ||
-          errorCode === "ECONNRESET" ||
-          errorCode === "ETIMEDOUT";
-
-        if (isNetworkError && attempt < RETRY_DELAYS_MS.length - 1) {
-          console.warn("Documents request retrying after network error.", {
-            requestId,
-            targetUrl: targetUrlString,
-            startedAt: requestStartedAtIso,
-            errorCode,
-            errorName: errorObject.name,
-            errorMessage: errorObject.message,
-            attempt: attempt + 1,
-          });
-          await delay(RETRY_DELAYS_MS[attempt]);
-          continue;
-        }
-
-        lastError = errorObject;
-        if (isNetworkError) {
-          console.error("Documents network error.", {
-            requestId,
-            targetUrl: targetUrlString,
-            startedAt: requestStartedAtIso,
-            completedAt: new Date().toISOString(),
-            durationMs: Date.now() - requestStartedAt,
-            errorCode,
-            errorName: errorObject.name,
-            errorMessage: errorObject.message,
-            errorStack: errorObject.stack,
-          });
-          break;
-        }
-
-        console.error("Documents request failed.", {
-          requestId,
-          targetUrl: targetUrlString,
-          startedAt: requestStartedAtIso,
-          completedAt: new Date().toISOString(),
-          durationMs: Date.now() - requestStartedAt,
-          errorName: errorObject.name,
-          errorMessage: errorObject.message,
-          errorStack: errorObject.stack,
-        });
-
-        return NextResponse.json(
-          {
-            error: errorObject.message || "Proxy error",
-            requestId,
-            upstreamStatus: null,
-          },
-          { status: 500 },
-        );
-      } finally {
-        clearTimeout(timeoutId);
-      }
+      return new NextResponse(body, {
+        status: response.status,
+        headers: {
+          "content-type":
+            response.headers.get("content-type") ?? "application/json",
+        },
+      });
     }
 
     console.error("Documents request failed after retries.", {
@@ -209,7 +223,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json(
       {
-        error: "Upstream unavailable after retries",
+        error: "Upstream connection failed after retries",
         requestId,
         upstreamStatus: lastUpstreamStatus,
       },
