@@ -142,7 +142,13 @@ export default function RequestPanel({
             <h4>{t("requestPanel.ticketsTitle")}</h4>
             <button
               type="button"
-              className="tab-button"
+              className={`tab-button request-panel__copy-button ${
+                copyState === "success"
+                  ? "request-panel__copy-button--success"
+                  : copyState === "error"
+                  ? "request-panel__copy-button--error"
+                  : ""
+              }`}
               onClick={handleCopyTickets}
             >
               {copyState === "success"
@@ -152,22 +158,12 @@ export default function RequestPanel({
                 : t("requestPanel.copyAll")}
             </button>
           </div>
-          <div className="table-wrapper">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>{t("requestPanel.ticketIdHeader")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tickets.map((ticket, index) => (
-                  <tr key={`${ticket.TICKET_ID}-${ticket.REF_ID}-${index}`}>
-                    <td>{ticket.TICKET_ID}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <p className="request-panel__results-count">
+            {t("requestPanel.ticketsCount", { count: tickets.length })}
+          </p>
+          <p className="request-panel__results-hint">
+            {t("requestPanel.copyHint")}
+          </p>
         </div>
       )}
     </aside>
