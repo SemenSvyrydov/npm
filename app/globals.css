@@ -73,6 +73,41 @@ main {
   color: #1d4ed8;
 }
 
+.button-primary {
+  border: 1px solid #2563eb;
+  background: #2563eb;
+  color: #ffffff;
+  padding: 10px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 10px 20px rgba(37, 99, 235, 0.25);
+}
+
+.button-primary:hover:not(:disabled) {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+.button-primary:active:not(:disabled) {
+  background: #1e40af;
+  border-color: #1e40af;
+}
+
+.button-primary:focus-visible {
+  outline: 3px solid #93c5fd;
+  outline-offset: 2px;
+}
+
+.button-primary:disabled {
+  cursor: not-allowed;
+  background: #64748b;
+  border-color: #64748b;
+  color: #f8fafc;
+  box-shadow: none;
+}
+
 .main-grid {
   display: grid;
   gap: 24px;
@@ -300,15 +335,7 @@ main {
 }
 
 .request-panel__copy-button {
-  border-color: #2563eb;
-  background: #2563eb;
-  color: #ffffff;
-  box-shadow: 0 10px 20px rgba(37, 99, 235, 0.25);
-}
-
-.request-panel__copy-button:hover {
-  background: #1d4ed8;
-  border-color: #1d4ed8;
+  min-width: 150px;
 }
 
 .request-panel__copy-button--success {
@@ -317,10 +344,40 @@ main {
   box-shadow: 0 10px 20px rgba(22, 163, 74, 0.25);
 }
 
+.request-panel__copy-button--success:hover:not(:disabled) {
+  background: #15803d;
+  border-color: #15803d;
+}
+
+.request-panel__copy-button--success:active:not(:disabled) {
+  background: #166534;
+  border-color: #166534;
+}
+
+.request-panel__copy-button--success:focus-visible {
+  outline: 3px solid #86efac;
+  outline-offset: 2px;
+}
+
 .request-panel__copy-button--error {
   background: #dc2626;
   border-color: #dc2626;
   box-shadow: 0 10px 20px rgba(220, 38, 38, 0.25);
+}
+
+.request-panel__copy-button--error:hover:not(:disabled) {
+  background: #b91c1c;
+  border-color: #b91c1c;
+}
+
+.request-panel__copy-button--error:active:not(:disabled) {
+  background: #991b1b;
+  border-color: #991b1b;
+}
+
+.request-panel__copy-button--error:focus-visible {
+  outline: 3px solid #fecaca;
+  outline-offset: 2px;
 }
 
 .request-panel__results-count {

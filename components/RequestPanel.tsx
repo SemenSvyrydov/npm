@@ -142,7 +142,7 @@ export default function RequestPanel({
             <h4>{t("requestPanel.ticketsTitle")}</h4>
             <button
               type="button"
-              className={`tab-button request-panel__copy-button ${
+              className={`button-primary request-panel__copy-button ${
                 copyState === "success"
                   ? "request-panel__copy-button--success"
                   : copyState === "error"
