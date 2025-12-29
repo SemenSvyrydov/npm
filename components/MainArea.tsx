@@ -235,9 +235,10 @@ export default function MainArea({ module }: MainAreaProps) {
     const collectedTickets: Ticket[] = [];
     const timeoutMs = CASE_API_TIMEOUT_MS;
     const concurrencyLimit = docRefConcurrency;
-
+    const docRefConcurrency = 1;
+    const docIdConcurrency = 3;
     try {
-      await runWithConcurrency(docRefs, concurrencyLimit, async (docRefValue) => {
+      await runWithConcurrency(docRefs, docRefConcurrency, async (docRefValue) => {
         let docRefSucceeded = false;
 
         try {
@@ -304,7 +305,7 @@ export default function MainArea({ module }: MainAreaProps) {
             }));
           }
 
-          for (const docId of docIds) {
+          await runWithConcurrency(docIds, docIdConcurrency, async (docId) => {
             try {
               setCurrentDocRef(docRefValue);
               setCurrentDocId(docId);
@@ -364,8 +365,10 @@ export default function MainArea({ module }: MainAreaProps) {
               }));
 
               if (ticketItems.length === 0) {
-                emptyTickets.push(`${docRefValue} / ${docId}`);
-                continue;
+                const emptyMessage = `${docRefValue} / ${docId}`;
+                emptyTickets.push(emptyMessage);
+                setNoTicketsDocIds((prev) => [...prev, emptyMessage]);
+                return;
               }
 
               collectedTickets.push(...ticketItems);
@@ -374,20 +377,24 @@ export default function MainArea({ module }: MainAreaProps) {
                 ticketError instanceof Error
                   ? ticketError.message
                   : "Неизвестная ошибка";
-              errors.push(`${docRefValue} / ${docId}: ${message}`);
+              const errorMessage = `${docRefValue} / ${docId}: ${message}`;
+              errors.push(errorMessage);
+              setRequestErrors((prev) => [...prev, errorMessage]);
               setProgress((prev) => ({
                 ...prev,
                 processedDocIds: prev.processedDocIds + 1,
                 errorCount: prev.errorCount + 1,
               }));
             }
-          }
+          });
         } catch (documentsError) {
           const message =
             documentsError instanceof Error
               ? documentsError.message
               : "Неизвестная ошибка";
-          errors.push(`${docRefValue}: ${message}`);
+          const errorMessage = `${docRefValue}: ${message}`;
+          errors.push(errorMessage);
+          setRequestErrors((prev) => [...prev, errorMessage]);
           setProgress((prev) => ({
             ...prev,
             errorCount: prev.errorCount + 1,
