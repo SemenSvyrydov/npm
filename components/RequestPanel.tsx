@@ -36,11 +36,11 @@ export default function RequestPanel({
       <div className="request-panel__inputs">
         <label className="request-panel__label">
           docRef (через запятую)
-          <input
-            type="text"
+          <textarea
             value={docRef}
             onChange={(event) => onDocRefChange(event.target.value)}
             placeholder="DOC-001, DOC-002"
+            rows={4}
           />
         </label>
         <label className="request-panel__label">
