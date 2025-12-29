@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { Module, Ticket } from "@/lib/types";
+import { CASE_API_TIMEOUT_MS } from "@/lib/timeouts";
 import ModuleView from "@/components/ModuleView";
 import RequestPanel from "@/components/RequestPanel";
 
@@ -199,7 +200,7 @@ export default function MainArea({ module }: MainAreaProps) {
 
     const errors: string[] = [];
     const collectedTickets: Ticket[] = [];
-    const timeoutMs = 15000;
+    const timeoutMs = CASE_API_TIMEOUT_MS;
     const concurrencyLimit = 3;
 
     try {

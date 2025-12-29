@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { CASE_API_TIMEOUT_MS } from "@/lib/timeouts";
 
 const BASE_URL = "http://10.1.10.224:8080/api/case/doc";
 
@@ -7,7 +8,7 @@ export async function GET(
   context: { params: { docId: string } },
 ) {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 10000);
+  const timeoutId = setTimeout(() => controller.abort(), CASE_API_TIMEOUT_MS);
 
   try {
     const targetUrl = new URL(
