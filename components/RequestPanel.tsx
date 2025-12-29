@@ -7,11 +7,6 @@ type RequestPanelProps = {
   module: Module;
 };
 
-type InputsState = {
-  docRef: string;
-  dbId: string;
-};
-
 const normalizeString = (value: unknown) => {
   if (typeof value === "string") {
     return value;
@@ -62,28 +57,23 @@ const extractTickets = (data: unknown) => {
 };
 
 export default function RequestPanel({ module }: RequestPanelProps) {
-  const [inputs, setInputs] = useState<InputsState>({ docRef: "", dbId: "" });
+  const [docRef, setDocRef] = useState("");
+  const [dbId, setDbId] = useState("");
   const [tickets, setTickets] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
 
-  const handleChange = (field: keyof InputsState) => (
-    event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) => {
-    setInputs((prev) => ({ ...prev, [field]: event.target.value }));
-  };
-
   const handleSubmit = async () => {
     const docRefs = Array.from(
       new Set(
-        inputs.docRef
+        docRef
           .split(",")
           .map((value) => value.trim())
           .filter(Boolean),
       ),
     );
-    const dbId = inputs.dbId.trim();
+    const normalizedDbId = dbId.trim();
 
     if (docRefs.length === 0) {
       setError("Укажите хотя бы один docRef.");
@@ -91,7 +81,7 @@ export default function RequestPanel({ module }: RequestPanelProps) {
       return;
     }
 
-    if (!dbId) {
+    if (!normalizedDbId) {
       setError("Укажите dbId для поиска.");
       setTickets([]);
       return;
@@ -110,7 +100,7 @@ export default function RequestPanel({ module }: RequestPanelProps) {
         try {
           const documentsUrl = `/api/case/documents?${new URLSearchParams({
             docRef,
-            dbId,
+            dbId: normalizedDbId,
           }).toString()}`;
 
           const documentsResponse = await fetch(documentsUrl);
@@ -187,8 +177,10 @@ export default function RequestPanel({ module }: RequestPanelProps) {
           docRef (через запятую)
           <textarea
             rows={3}
-            value={inputs.docRef}
-            onChange={handleChange("docRef")}
+            value={docRef}
+            onChange={(event: ChangeEvent<HTMLTextAreaElement>) =>
+              setDocRef(event.target.value)
+            }
             placeholder="DOC-001, DOC-002"
           />
         </label>
@@ -196,8 +188,10 @@ export default function RequestPanel({ module }: RequestPanelProps) {
           dbId
           <input
             type="text"
-            value={inputs.dbId}
-            onChange={handleChange("dbId")}
+            value={dbId}
+            onChange={(event: ChangeEvent<HTMLInputElement>) =>
+              setDbId(event.target.value)
+            }
             placeholder="1"
           />
         </label>
