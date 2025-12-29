@@ -2,15 +2,15 @@ import { NextResponse } from "next/server";
 
 const BASE_URL = "http://10.1.10.224:8080/api/case/doc";
 
-type RouteContext = {
-  params: {
-    docId: string;
-  };
-};
-
-export async function GET(_: Request, { params }: RouteContext) {
+export async function GET(
+  _request: Request,
+  context: { params: { docId: string } },
+) {
   try {
-    const targetUrl = new URL(`${BASE_URL}/${encodeURIComponent(params.docId)}/tickets`);
+    const targetUrl = new URL(
+      `${BASE_URL}/${encodeURIComponent(context.params.docId)}/tickets`,
+    );
+
     const response = await fetch(targetUrl.toString(), {
       method: "GET",
       headers: {
