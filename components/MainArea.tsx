@@ -159,12 +159,40 @@ export default function MainArea({ module }: MainAreaProps) {
             caseId: "",
           }).toString()}`;
 
+          const documentsStart = performance.now();
+          console.info("Документы: старт запроса", {
+            docRef: docRefValue,
+            dbId: normalizedDbId,
+            documentsUrl,
+            startedAtMs: documentsStart,
+          });
           const documentsResponse = await fetch(documentsUrl);
+          console.info("Документы: ответ", {
+            docRef: docRefValue,
+            dbId: normalizedDbId,
+            documentsUrl,
+            status: documentsResponse.status,
+            elapsedMs: performance.now() - documentsStart,
+            contentLength: documentsResponse.headers.get("content-length"),
+          });
           if (!documentsResponse.ok) {
             throw new Error(`Ошибка документов: ${documentsResponse.status}`);
           }
 
+          const documentsParseStart = performance.now();
+          console.info("Документы: чтение JSON", {
+            docRef: docRefValue,
+            dbId: normalizedDbId,
+            documentsUrl,
+            startedAtMs: documentsParseStart,
+          });
           const documentsPayload = await documentsResponse.json();
+          console.info("Документы: JSON прочитан", {
+            docRef: docRefValue,
+            dbId: normalizedDbId,
+            documentsUrl,
+            elapsedMs: performance.now() - documentsParseStart,
+          });
           const docIds = extractDocIds(documentsPayload);
 
           if (docIds.length === 0) {
@@ -173,14 +201,49 @@ export default function MainArea({ module }: MainAreaProps) {
 
           for (const docId of docIds) {
             try {
+              const ticketsStart = performance.now();
+              console.info("Билеты: старт запроса", {
+                docRef: docRefValue,
+                dbId: normalizedDbId,
+                docId,
+                documentsUrl,
+                startedAtMs: ticketsStart,
+              });
               const ticketsResponse = await fetch(`/api/case/doc/${docId}/tickets`);
+              console.info("Билеты: ответ", {
+                docRef: docRefValue,
+                dbId: normalizedDbId,
+                docId,
+                status: ticketsResponse.status,
+                elapsedMs: performance.now() - ticketsStart,
+                contentLength: ticketsResponse.headers.get("content-length"),
+              });
               if (!ticketsResponse.ok) {
                 throw new Error(`Ошибка билетов: ${ticketsResponse.status}`);
               }
 
+              const ticketsParseStart = performance.now();
+              console.info("Билеты: чтение JSON", {
+                docRef: docRefValue,
+                dbId: normalizedDbId,
+                docId,
+                startedAtMs: ticketsParseStart,
+              });
               const ticketsPayload = await ticketsResponse.json();
+              console.info("Билеты: JSON прочитан", {
+                docRef: docRefValue,
+                dbId: normalizedDbId,
+                docId,
+                elapsedMs: performance.now() - ticketsParseStart,
+              });
               const ticketItems = extractTickets(ticketsPayload);
 
+              console.info("Билеты: завершение запроса", {
+                docRef: docRefValue,
+                dbId: normalizedDbId,
+                docId,
+                ticketsCount: ticketItems.length,
+              });
               if (ticketItems.length === 0) {
                 continue;
               }
