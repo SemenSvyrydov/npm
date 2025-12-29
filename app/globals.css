@@ -76,7 +76,6 @@ main {
 .main-grid {
   display: grid;
   gap: 24px;
-<<<<<< codex/fix-500-error-on-document-retrieval
   grid-template-columns: minmax(0, 1fr) 360px;
   align-items: start;
 }
