@@ -149,8 +149,14 @@ export default function MainArea({ module }: MainAreaProps) {
       for (const docRefValue of docRefs) {
         try {
           const documentsUrl = `/api/case/documents?${new URLSearchParams({
+            caseNum: "",
+            procNum: "",
             docRef: docRefValue,
+            docId: "",
+            courtName: "",
             dbId: normalizedDbId,
+            procRef: "",
+            caseId: "",
           }).toString()}`;
 
           const documentsResponse = await fetch(documentsUrl);
