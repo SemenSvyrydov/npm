@@ -1,6 +1,7 @@
 "use client";
 
 import type { Module, Ticket } from "@/lib/types";
+import { CASE_API_TIMEOUT_SECONDS } from "@/lib/timeouts";
 
 type RequestPanelProps = {
   module: Module;
@@ -63,6 +64,10 @@ export default function RequestPanel({
       >
         {loading ? "Запрос выполняется..." : "Выполнить запрос"}
       </button>
+      <p className="request-panel__hint">
+        Долгие запросы могут выполняться до {CASE_API_TIMEOUT_SECONDS} сек. —
+        это нормально.
+      </p>
 
       {error && <p className="request-panel__error">{error}</p>}
 
