@@ -81,7 +81,7 @@ export default function RequestPanel({
           <table>
             <thead>
               <tr>
-                <th>Ticket ID</th>
+                <th>Тікет ID</th>
               </tr>
             </thead>
             <tbody>

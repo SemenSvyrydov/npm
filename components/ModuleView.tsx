@@ -6,7 +6,7 @@ type ModuleViewProps = {
 };
 
 const ticketColumns = [
-  "TICKET_ID",
+  "Тікет ID",
   "REF_ID",
   "CASE_NUMBER",
   "DESCRIPTION",
