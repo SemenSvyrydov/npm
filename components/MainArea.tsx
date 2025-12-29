@@ -22,8 +22,23 @@ const normalizeTicketField = (value: unknown) => {
   return String(value);
 };
 
-const extractDocIds = (data: unknown) => {
-  const readDocId = (item: unknown): string | null => {
+type DocumentInfo = {
+  docId: string;
+  courtName: string;
+};
+
+const normalizeDocumentField = (value: unknown) => {
+  if (value === null || value === undefined) {
+    return "";
+  }
+  if (typeof value === "string") {
+    return value.trim();
+  }
+  return String(value);
+};
+
+const extractDocuments = (data: unknown) => {
+  const readDocInfo = (item: unknown): DocumentInfo | null => {
     if (!item || typeof item !== "object") {
       return null;
     }
@@ -37,21 +52,37 @@ const extractDocIds = (data: unknown) => {
       record.DOCID,
     ];
 
-    const value = candidates.find(
+    const docIdValue = candidates.find(
       (candidate) => candidate !== null && candidate !== undefined && candidate !== "",
     );
 
-    if (value === null || value === undefined) {
+    if (docIdValue === null || docIdValue === undefined) {
       return null;
     }
 
-    return String(value);
+    const courtCandidates = [
+      record.courtName,
+      record.court_name,
+      record.court,
+      record.COURT_NAME,
+      record.COURT,
+      record.COURTNAME,
+    ];
+
+    const courtValue = courtCandidates.find(
+      (candidate) => candidate !== null && candidate !== undefined && candidate !== "",
+    );
+
+    return {
+      docId: String(docIdValue),
+      courtName: normalizeDocumentField(courtValue),
+    };
   };
 
   if (Array.isArray(data)) {
     return data
-      .map(readDocId)
-      .filter((docId): docId is string => Boolean(docId));
+      .map(readDocInfo)
+      .filter((docInfo): docInfo is DocumentInfo => Boolean(docInfo));
   }
 
   if (data && typeof data === "object") {
@@ -63,8 +94,8 @@ const extractDocIds = (data: unknown) => {
       : [];
 
     return candidate
-      .map(readDocId)
-      .filter((docId): docId is string => Boolean(docId));
+      .map(readDocInfo)
+      .filter((docInfo): docInfo is DocumentInfo => Boolean(docInfo));
   }
 
   return [];
@@ -292,7 +323,8 @@ export default function MainArea({ module }: MainAreaProps) {
 
           docRefSucceeded = true;
 
-          const docIds = extractDocIds(documentsPayload);
+          const documentItems = extractDocuments(documentsPayload);
+          const docIds = documentItems.map((item) => item.docId);
 
           if (docIds.length > 0) {
             setProgress((prev) => ({
@@ -301,90 +333,98 @@ export default function MainArea({ module }: MainAreaProps) {
             }));
           }
 
-          await runWithConcurrency(docIds, docIdConcurrency, async (docId) => {
-            try {
-              setCurrentDocRef(docRefValue);
-              setCurrentDocId(docId);
-              setCurrentStartedAt(Date.now());
-              const ticketsStart = performance.now();
-              console.info(t("logs.tickets.start"), {
-                docRef: docRefValue,
-                dbId: normalizedDbId,
-                docId,
-                documentsUrl,
-                startedAtMs: ticketsStart,
-              });
-              const ticketsResponse = await fetchWithTimeout(
-                `/api/case/doc/${docId}/tickets`,
-                undefined,
-                timeoutMs,
-              );
-              console.info(t("logs.tickets.response"), {
-                docRef: docRefValue,
-                dbId: normalizedDbId,
-                docId,
-                status: ticketsResponse.status,
-                elapsedMs: performance.now() - ticketsStart,
-                contentLength: ticketsResponse.headers.get("content-length"),
-              });
-
-              if (!ticketsResponse.ok) {
-                throw new Error(
-                  t("errors.ticketsStatus", { status: ticketsResponse.status }),
+          await runWithConcurrency(
+            documentItems,
+            docIdConcurrency,
+            async (documentItem) => {
+              try {
+                setCurrentDocRef(docRefValue);
+                setCurrentDocId(documentItem.docId);
+                setCurrentStartedAt(Date.now());
+                const ticketsStart = performance.now();
+                console.info(t("logs.tickets.start"), {
+                  docRef: docRefValue,
+                  dbId: normalizedDbId,
+                  docId: documentItem.docId,
+                  documentsUrl,
+                  startedAtMs: ticketsStart,
+                });
+                const ticketsResponse = await fetchWithTimeout(
+                  `/api/case/doc/${documentItem.docId}/tickets`,
+                  undefined,
+                  timeoutMs,
                 );
+                console.info(t("logs.tickets.response"), {
+                  docRef: docRefValue,
+                  dbId: normalizedDbId,
+                  docId: documentItem.docId,
+                  status: ticketsResponse.status,
+                  elapsedMs: performance.now() - ticketsStart,
+                  contentLength: ticketsResponse.headers.get("content-length"),
+                });
+
+                if (!ticketsResponse.ok) {
+                  throw new Error(
+                    t("errors.ticketsStatus", {
+                      status: ticketsResponse.status,
+                    }),
+                  );
+                }
+
+                const ticketsParseStart = performance.now();
+                console.info(t("logs.tickets.readJson"), {
+                  docRef: docRefValue,
+                  dbId: normalizedDbId,
+                  docId: documentItem.docId,
+                  startedAtMs: ticketsParseStart,
+                });
+                const ticketsPayload = await ticketsResponse.json();
+                console.info(t("logs.tickets.jsonReady"), {
+                  docRef: docRefValue,
+                  dbId: normalizedDbId,
+                  docId: documentItem.docId,
+                  elapsedMs: performance.now() - ticketsParseStart,
+                });
+                const ticketItems = extractTickets(ticketsPayload);
+                console.info(t("logs.tickets.finish"), {
+                  docRef: docRefValue,
+                  dbId: normalizedDbId,
+                  docId: documentItem.docId,
+                  ticketsCount: ticketItems.length,
+                });
+
+                setProgress((prev) => ({
+                  ...prev,
+                  processedDocIds: prev.processedDocIds + 1,
+                  successDocIds: prev.successDocIds + 1,
+                }));
+
+                if (ticketItems.length === 0) {
+                  const courtName =
+                    documentItem.courtName || t("common.placeholder");
+                  const emptyMessage = `${docRefValue} / ${documentItem.docId} / ${courtName}`;
+                  emptyTickets.push(emptyMessage);
+                  setNoTicketsDocIds((prev) => [...prev, emptyMessage]);
+                  return;
+                }
+
+                collectedTickets.push(...ticketItems);
+              } catch (ticketError) {
+                const message =
+                  ticketError instanceof Error
+                    ? ticketError.message
+                    : t("errors.unknown");
+                const errorMessage = `${docRefValue} / ${documentItem.docId}: ${message}`;
+                errors.push(errorMessage);
+                setRequestErrors((prev) => [...prev, errorMessage]);
+                setProgress((prev) => ({
+                  ...prev,
+                  processedDocIds: prev.processedDocIds + 1,
+                  errorCount: prev.errorCount + 1,
+                }));
               }
-
-              const ticketsParseStart = performance.now();
-              console.info(t("logs.tickets.readJson"), {
-                docRef: docRefValue,
-                dbId: normalizedDbId,
-                docId,
-                startedAtMs: ticketsParseStart,
-              });
-              const ticketsPayload = await ticketsResponse.json();
-              console.info(t("logs.tickets.jsonReady"), {
-                docRef: docRefValue,
-                dbId: normalizedDbId,
-                docId,
-                elapsedMs: performance.now() - ticketsParseStart,
-              });
-              const ticketItems = extractTickets(ticketsPayload);
-              console.info(t("logs.tickets.finish"), {
-                docRef: docRefValue,
-                dbId: normalizedDbId,
-                docId,
-                ticketsCount: ticketItems.length,
-              });
-
-              setProgress((prev) => ({
-                ...prev,
-                processedDocIds: prev.processedDocIds + 1,
-                successDocIds: prev.successDocIds + 1,
-              }));
-
-              if (ticketItems.length === 0) {
-                const emptyMessage = `${docRefValue} / ${docId}`;
-                emptyTickets.push(emptyMessage);
-                setNoTicketsDocIds((prev) => [...prev, emptyMessage]);
-                return;
-              }
-
-              collectedTickets.push(...ticketItems);
-            } catch (ticketError) {
-              const message =
-                ticketError instanceof Error
-                  ? ticketError.message
-                  : t("errors.unknown");
-              const errorMessage = `${docRefValue} / ${docId}: ${message}`;
-              errors.push(errorMessage);
-              setRequestErrors((prev) => [...prev, errorMessage]);
-              setProgress((prev) => ({
-                ...prev,
-                processedDocIds: prev.processedDocIds + 1,
-                errorCount: prev.errorCount + 1,
-              }));
-            }
-          });
+            },
+          );
         } catch (documentsError) {
           const message =
             documentsError instanceof Error
