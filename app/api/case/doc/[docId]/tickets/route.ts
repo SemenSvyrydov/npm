@@ -19,7 +19,7 @@ export async function GET(
       cache: "no-store",
     });
 
-    const body = await response.text();
+    const body = response.body ?? (await response.text());
 
     return new NextResponse(body, {
       status: response.status,
