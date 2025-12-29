@@ -6,7 +6,7 @@ type ModuleViewProps = {
 };
 
 const ticketColumns = [
-  "TICKET_ID",
+  "Тікет ID",
   "REF_ID",
   "CASE_NUMBER",
   "DESCRIPTION",
@@ -29,6 +29,7 @@ export default function ModuleView({ module, tickets }: ModuleViewProps) {
         ))}
       </div>
       <div className="table-wrapper">
+
         <table className="table">
           <thead>
             <tr>

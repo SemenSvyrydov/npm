@@ -67,10 +67,10 @@ export default function RequestPanel({
         <label className="request-panel__label">
           docRef (через запятую)
           <textarea
-            rows={4}
             value={docRef}
             onChange={(event) => onDocRefChange(event.target.value)}
             placeholder="DOC-001, DOC-002"
+            rows={4}
           />
         </label>
         <label className="request-panel__label">
@@ -126,6 +126,7 @@ export default function RequestPanel({
               <thead>
                 <tr>
                   <th>Тікет ID</th>
+
                 </tr>
               </thead>
               <tbody>

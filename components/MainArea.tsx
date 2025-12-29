@@ -183,7 +183,7 @@ export default function MainArea({ module }: MainAreaProps) {
     const docRefs = Array.from(
       new Set(
         docRef
-          .split(",")
+          .split(/[,\n\r]+/)
           .map((value) => value.trim())
           .filter(Boolean),
       ),
@@ -322,7 +322,7 @@ export default function MainArea({ module }: MainAreaProps) {
                 contentLength: ticketsResponse.headers.get("content-length"),
               });
               if (!ticketsResponse.ok) {
-                throw new Error(`Ошибка билетов: ${ticketsResponse.status}`);
+                throw new Error(`Ошибка Тікети: ${ticketsResponse.status}`);
               }
 
               const ticketsParseStart = performance.now();
