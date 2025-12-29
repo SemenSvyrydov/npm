@@ -104,6 +104,7 @@ export default function MainArea({ module }: MainAreaProps) {
   const [docRef, setDocRef] = useState("");
   const [dbId, setDbId] = useState("");
   const [docRefConcurrency, setDocRefConcurrency] = useState(1);
+  const [docIdConcurrency, setDocIdConcurrency] = useState(2);
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -180,12 +181,23 @@ export default function MainArea({ module }: MainAreaProps) {
     setDbId(value.replace(/\D/g, ""));
   };
 
+  const clampConcurrency = (value: number) =>
+    Math.min(10, Math.max(1, Math.trunc(value)));
+
   const handleDocRefConcurrencyChange = (value: number) => {
     if (Number.isNaN(value)) {
       setDocRefConcurrency(1);
       return;
     }
-    setDocRefConcurrency(Math.min(10, Math.max(1, Math.trunc(value))));
+    setDocRefConcurrency(clampConcurrency(value));
+  };
+
+  const handleDocIdConcurrencyChange = (value: number) => {
+    if (Number.isNaN(value)) {
+      setDocIdConcurrency(1);
+      return;
+    }
+    setDocIdConcurrency(clampConcurrency(value));
   };
 
   const handleSubmit = async () => {
@@ -234,9 +246,6 @@ export default function MainArea({ module }: MainAreaProps) {
     const emptyTickets: string[] = [];
     const collectedTickets: Ticket[] = [];
     const timeoutMs = CASE_API_TIMEOUT_MS;
-const docRefConcurrency = 1;
-const docIdConcurrency = 3;
-const concurrencyLimit = docRefConcurrency;
     try {
       await runWithConcurrency(docRefs, docRefConcurrency, async (docRefValue) => {
         let docRefSucceeded = false;
@@ -441,6 +450,7 @@ const concurrencyLimit = docRefConcurrency;
           docRef={docRef}
           dbId={dbId}
           docRefConcurrency={docRefConcurrency}
+          docIdConcurrency={docIdConcurrency}
           loading={loading}
           error={error}
           tickets={tickets}
@@ -448,6 +458,7 @@ const concurrencyLimit = docRefConcurrency;
           onDocRefChange={handleDocRefChange}
           onDbIdChange={handleDbIdChange}
           onDocRefConcurrencyChange={handleDocRefConcurrencyChange}
+          onDocIdConcurrencyChange={handleDocIdConcurrencyChange}
           onSubmit={handleSubmit}
         />
       </div>
