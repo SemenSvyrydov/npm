@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, type ChangeEvent } from "react";
-
 import type { Module } from "@/lib/types";
 
 type RequestPanelProps = {
@@ -17,7 +16,6 @@ const normalizeString = (value: unknown) => {
   if (typeof value === "string") {
     return value;
   }
-
   return JSON.stringify(value);
 };
 
@@ -35,8 +33,8 @@ const extractDocIds = (data: unknown) => {
     const candidate = Array.isArray(container.documents)
       ? container.documents
       : Array.isArray(container.data)
-        ? container.data
-        : [];
+      ? container.data
+      : [];
 
     return candidate
       .map((item) => (typeof item === "object" && item !== null ? item : null))
@@ -80,9 +78,9 @@ export default function RequestPanel({ module }: RequestPanelProps) {
     const docRefs = Array.from(
       new Set(
         inputs.docRef
-      .split(",")
-      .map((value) => value.trim())
-            .filter(Boolean),
+          .split(",")
+          .map((value) => value.trim())
+          .filter(Boolean),
       ),
     );
     const dbId = inputs.dbId.trim();
@@ -147,12 +145,18 @@ export default function RequestPanel({ module }: RequestPanelProps) {
                 results.push(`${docRef} / ${docId}: ${ticket}`);
               });
             } catch (ticketError) {
-              const message = ticketError instanceof Error ? ticketError.message : "Неизвестная ошибка";
+              const message =
+                ticketError instanceof Error
+                  ? ticketError.message
+                  : "Неизвестная ошибка";
               errors.push(`${docRef} / ${docId}: ${message}`);
             }
           }
         } catch (documentsError) {
-          const message = documentsError instanceof Error ? documentsError.message : "Неизвестная ошибка";
+          const message =
+            documentsError instanceof Error
+              ? documentsError.message
+              : "Неизвестная ошибка";
           errors.push(`${docRef}: ${message}`);
         }
       }
@@ -171,6 +175,7 @@ export default function RequestPanel({ module }: RequestPanelProps) {
     <aside className="card">
       <h3>Контекстные действия</h3>
       <p>Настройки запросов для модуля: {module.name}.</p>
+
       <ul>
         {module.requestTypes.map((requestType) => (
           <li key={requestType}>Сценарий: {requestType}</li>

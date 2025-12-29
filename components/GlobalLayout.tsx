@@ -7,19 +7,19 @@ import MainArea from "@/components/MainArea";
 import type { Module, Tab } from "@/lib/types";
 
 const modules: Record<string, Module> = {
-  analytics: {
-    id: "analytics",
-    name: "Аналитика",
-    requestTypes: ["analytics", "reports"],
+  kvitivki: {
+    id: "kvitivki",
+    name: "Квитівки",
+    requestTypes: ["kvitivki"],
     resultSchema: ["Статус", "Контур", "Обновлено"]
   }
 };
 
 const initialTabs: Tab[] = [
   {
-    id: "tab-analytics",
-    title: "Аналитика",
-    moduleId: "analytics",
+    id: "tab-kvitivki",
+    title: "Квитівки",
+    moduleId: "kvitivki",
     isActive: true
   }
 ];
