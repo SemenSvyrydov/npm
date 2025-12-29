@@ -76,7 +76,8 @@ main {
 .main-grid {
   display: grid;
   gap: 24px;
-  grid-template-columns: minmax(0, 1fr) 260px;
+<<<<<< codex/fix-500-error-on-document-retrieval
+  grid-template-columns: minmax(0, 1fr) 360px;
   align-items: start;
 }
 
@@ -94,7 +95,7 @@ main {
   font-size: 14px;
 }
 
-.table-scroll {
+.table-wrapper {
   width: 100%;
   overflow-x: auto;
 }
@@ -230,39 +231,72 @@ main {
   font-size: 13px;
 }
 
+.request-progress__empty {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  color: #0f172a;
+  font-size: 13px;
+}
+
+.request-panel__inputs {
+  display: grid;
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.request-panel__label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+  color: #1f2937;
+}
+
+.request-panel__label input,
+.request-panel__label textarea {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.request-panel__label textarea {
+  resize: vertical;
+  min-height: 96px;
+}
+
+.request-panel__hint {
+  margin: 12px 0 0;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.request-panel__error {
+  margin-top: 12px;
+  color: #b91c1c;
+  font-size: 13px;
+}
+
+.request-panel__empty {
+  margin-top: 12px;
+  font-size: 13px;
+  color: #475569;
+}
+
+.request-panel__results {
+  margin-top: 16px;
+}
+
 .request-panel__results-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  flex-wrap: wrap;
 }
 
-.request-panel__copy {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.request-panel__copied {
-  font-size: 12px;
-  color: #16a34a;
-  font-weight: 600;
-}
-
-.request-panel__inputs input,
-.request-panel__inputs textarea {
-  width: 100%;
-  padding: 12px 14px;
-  font-size: 16px;
-  line-height: 1.4;
-}
-
-.request-panel__inputs textarea {
-  min-height: 96px;
-  resize: vertical;
-}
+.request-panel__results-header h4 {
+  margin: 0;
 }
 
 @media (max-width: 900px) {

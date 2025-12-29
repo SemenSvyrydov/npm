@@ -28,7 +28,8 @@ export default function ModuleView({ module, tickets }: ModuleViewProps) {
           </span>
         ))}
       </div>
-      <div className="table-scroll">
+      <div className="table-wrapper">
+
         <table className="table">
           <thead>
             <tr>
@@ -40,7 +41,7 @@ export default function ModuleView({ module, tickets }: ModuleViewProps) {
           <tbody>
             {tickets.length === 0 ? (
               <tr>
-                <td colSpan={ticketColumns.length}>Нет данных</td>
+                <td colSpan={ticketColumns.length}>Немає тікетів</td>
               </tr>
             ) : (
               tickets.map((ticket, index) => (

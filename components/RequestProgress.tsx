@@ -16,6 +16,7 @@ type RequestProgressProps = {
     errorCount: number;
   };
   errors: string[];
+  emptyTickets: string[];
 };
 
 const formatCount = (current: number, total: number) =>
@@ -32,6 +33,7 @@ export default function RequestProgress({
   currentDocId,
   progress,
   errors,
+  emptyTickets,
 }: RequestProgressProps) {
   if (!visible) {
     return null;
@@ -120,10 +122,20 @@ export default function RequestProgress({
             {progress.totalDocIds}.
           </p>
           <p>Количество ошибок: {errors.length}.</p>
+          <p>Пустые тікети: {emptyTickets.length}.</p>
           {errors.length > 0 && (
             <ul className="request-progress__errors">
               {errors.map((errorItem, index) => (
                 <li key={`${errorItem}-${index}`}>{errorItem}</li>
+              ))}
+            </ul>
+          )}
+          {emptyTickets.length > 0 && (
+            <ul className="request-progress__empty">
+              {emptyTickets.map((item, index) => (
+                <li key={`${item}-${index}`}>
+                  {item}: тікети не знайдені.
+                </li>
               ))}
             </ul>
           )}
