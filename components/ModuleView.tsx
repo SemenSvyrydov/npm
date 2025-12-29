@@ -1,26 +1,31 @@
+"use client";
+
 import type { Module, Ticket } from "@/lib/types";
+import { useLocale } from "@/lib/i18n";
 
 type ModuleViewProps = {
   module: Module;
   tickets: Ticket[];
 };
 
-const ticketColumns = [
-  "Тікет ID",
-  "REF_ID",
-  "CASE_NUMBER",
-  "DESCRIPTION",
-  "DT_STATUS",
-  "DELIVERED_AT",
-  "USER_NAME",
-  "CODE"
-] as const;
-
 export default function ModuleView({ module, tickets }: ModuleViewProps) {
+  const { t } = useLocale();
+
+  const ticketColumns = [
+    t("ticketColumns.ticketId"),
+    t("ticketColumns.refId"),
+    t("ticketColumns.caseNumber"),
+    t("ticketColumns.description"),
+    t("ticketColumns.dtStatus"),
+    t("ticketColumns.deliveredAt"),
+    t("ticketColumns.userName"),
+    t("ticketColumns.code"),
+  ] as const;
+
   return (
     <section className="card">
       <h2>{module.name}</h2>
-      <p>Результаты запросов по выбранному модулю.</p>
+      <p>{t("moduleView.description")}</p>
       <div>
         {module.requestTypes.map((requestType) => (
           <span key={requestType} className="request-pill">
@@ -29,7 +34,6 @@ export default function ModuleView({ module, tickets }: ModuleViewProps) {
         ))}
       </div>
       <div className="table-wrapper">
-
         <table className="table">
           <thead>
             <tr>
@@ -41,7 +45,9 @@ export default function ModuleView({ module, tickets }: ModuleViewProps) {
           <tbody>
             {tickets.length === 0 ? (
               <tr>
-                <td colSpan={ticketColumns.length}>Немає тікетів</td>
+                <td colSpan={ticketColumns.length}>
+                  {t("moduleView.noTickets")}
+                </td>
               </tr>
             ) : (
               tickets.map((ticket, index) => (
