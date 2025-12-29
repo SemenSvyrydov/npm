@@ -6,6 +6,7 @@ import { CASE_API_TIMEOUT_MS } from "@/lib/timeouts";
 import ModuleView from "@/components/ModuleView";
 import RequestPanel from "@/components/RequestPanel";
 import RequestProgress from "@/components/RequestProgress";
+import { useLocale } from "@/lib/i18n";
 
 type MainAreaProps = {
   module: Module;
@@ -101,6 +102,7 @@ const extractTickets = (data: unknown): Ticket[] => {
 };
 
 export default function MainArea({ module }: MainAreaProps) {
+  const { t } = useLocale();
   const [docRef, setDocRef] = useState("");
   const [dbId, setDbId] = useState("");
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -193,13 +195,13 @@ export default function MainArea({ module }: MainAreaProps) {
     const normalizedDbId = dbId.trim();
 
     if (docRefs.length === 0) {
-      setError("Укажите хотя бы один docRef.");
+      setError(t("errors.noDocRef"));
       setTickets([]);
       return;
     }
 
     if (!normalizedDbId) {
-      setError("Укажите dbId для поиска.");
+      setError(t("errors.noDbId"));
       setTickets([]);
       return;
     }
@@ -247,7 +249,7 @@ export default function MainArea({ module }: MainAreaProps) {
           }).toString()}`;
 
           const documentsStart = performance.now();
-          console.info("Документы: старт запроса", {
+          console.info(t("logs.documents.start"), {
             docRef: docRefValue,
             dbId: normalizedDbId,
             documentsUrl,
@@ -258,7 +260,7 @@ export default function MainArea({ module }: MainAreaProps) {
             undefined,
             timeoutMs,
           );
-          console.info("Документы: ответ", {
+          console.info(t("logs.documents.response"), {
             docRef: docRefValue,
             dbId: normalizedDbId,
             documentsUrl,
@@ -266,24 +268,28 @@ export default function MainArea({ module }: MainAreaProps) {
             elapsedMs: performance.now() - documentsStart,
             contentLength: documentsResponse.headers.get("content-length"),
           });
+
           if (!documentsResponse.ok) {
-            throw new Error(`Ошибка документов: ${documentsResponse.status}`);
+            throw new Error(
+              t("errors.documentsStatus", { status: documentsResponse.status }),
+            );
           }
 
           const documentsParseStart = performance.now();
-          console.info("Документы: чтение JSON", {
+          console.info(t("logs.documents.readJson"), {
             docRef: docRefValue,
             dbId: normalizedDbId,
             documentsUrl,
             startedAtMs: documentsParseStart,
           });
           const documentsPayload = await documentsResponse.json();
-          console.info("Документы: JSON прочитан", {
+          console.info(t("logs.documents.jsonReady"), {
             docRef: docRefValue,
             dbId: normalizedDbId,
             documentsUrl,
             elapsedMs: performance.now() - documentsParseStart,
           });
+
           docRefSucceeded = true;
 
           const docIds = extractDocIds(documentsPayload);
@@ -301,7 +307,7 @@ export default function MainArea({ module }: MainAreaProps) {
               setCurrentDocId(docId);
               setCurrentStartedAt(Date.now());
               const ticketsStart = performance.now();
-              console.info("Билеты: старт запроса", {
+              console.info(t("logs.tickets.start"), {
                 docRef: docRefValue,
                 dbId: normalizedDbId,
                 docId,
@@ -313,7 +319,7 @@ export default function MainArea({ module }: MainAreaProps) {
                 undefined,
                 timeoutMs,
               );
-              console.info("Билеты: ответ", {
+              console.info(t("logs.tickets.response"), {
                 docRef: docRefValue,
                 dbId: normalizedDbId,
                 docId,
@@ -321,27 +327,29 @@ export default function MainArea({ module }: MainAreaProps) {
                 elapsedMs: performance.now() - ticketsStart,
                 contentLength: ticketsResponse.headers.get("content-length"),
               });
+
               if (!ticketsResponse.ok) {
-                throw new Error(`Ошибка Тікети: ${ticketsResponse.status}`);
+                throw new Error(
+                  t("errors.ticketsStatus", { status: ticketsResponse.status }),
+                );
               }
 
               const ticketsParseStart = performance.now();
-              console.info("Билеты: чтение JSON", {
+              console.info(t("logs.tickets.readJson"), {
                 docRef: docRefValue,
                 dbId: normalizedDbId,
                 docId,
                 startedAtMs: ticketsParseStart,
               });
               const ticketsPayload = await ticketsResponse.json();
-              console.info("Билеты: JSON прочитан", {
+              console.info(t("logs.tickets.jsonReady"), {
                 docRef: docRefValue,
                 dbId: normalizedDbId,
                 docId,
                 elapsedMs: performance.now() - ticketsParseStart,
               });
               const ticketItems = extractTickets(ticketsPayload);
-
-              console.info("Билеты: завершение запроса", {
+              console.info(t("logs.tickets.finish"), {
                 docRef: docRefValue,
                 dbId: normalizedDbId,
                 docId,
@@ -366,7 +374,7 @@ export default function MainArea({ module }: MainAreaProps) {
               const message =
                 ticketError instanceof Error
                   ? ticketError.message
-                  : "Неизвестная ошибка";
+                  : t("errors.unknown");
               const errorMessage = `${docRefValue} / ${docId}: ${message}`;
               errors.push(errorMessage);
               setRequestErrors((prev) => [...prev, errorMessage]);
@@ -381,7 +389,7 @@ export default function MainArea({ module }: MainAreaProps) {
           const message =
             documentsError instanceof Error
               ? documentsError.message
-              : "Неизвестная ошибка";
+              : t("errors.unknown");
           const errorMessage = `${docRefValue}: ${message}`;
           errors.push(errorMessage);
           setRequestErrors((prev) => [...prev, errorMessage]);

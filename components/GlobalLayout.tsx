@@ -1,45 +1,62 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Header from "@/components/Header";
 import TabBar from "@/components/TabBar";
 import MainArea from "@/components/MainArea";
 import type { Module, Tab } from "@/lib/types";
-
-const modules: Record<string, Module> = {
-  kvitivki: {
-    id: "kvitivki",
-    name: "Квитівки",
-    requestTypes: ["kvitivki"],
-    resultSchema: ["Статус", "Контур", "Обновлено"]
-  }
-};
-
-const initialTabs: Tab[] = [
-  {
-    id: "tab-kvitivki",
-    title: "Квитівки",
-    moduleId: "kvitivki",
-    isActive: true
-  }
-];
+import { useLocale } from "@/lib/i18n";
 
 export default function GlobalLayout() {
-  const [tabs, setTabs] = useState<Tab[]>(initialTabs);
-  const [activeTabId, setActiveTabId] = useState<string>(initialTabs[0].id);
+  const { t } = useLocale();
+
+  const modules: Record<string, Module> = useMemo(
+    () => ({
+      kvitivki: {
+        id: "kvitivki",
+        name: t("module.kvitivki"),
+        requestTypes: [t("module.requestType.kvitivki")],
+        resultSchema: [
+          t("module.resultSchema.status"),
+          t("module.resultSchema.contour"),
+          t("module.resultSchema.updated"),
+        ],
+      },
+    }),
+    [t],
+  );
+
+  const [tabs, setTabs] = useState<Tab[]>([
+    {
+      id: "tab-kvitivki",
+      title: t("module.kvitivki"),
+      moduleId: "kvitivki",
+      isActive: true,
+    },
+  ]);
+  const [activeTabId, setActiveTabId] = useState<string>(tabs[0].id);
+
+  useEffect(() => {
+    setTabs((prevTabs) =>
+      prevTabs.map((tab) => ({
+        ...tab,
+        title: t("module.kvitivki"),
+      })),
+    );
+  }, [t]);
 
   const activeModule = useMemo(() => {
     const activeTab = tabs.find((tab) => tab.id === activeTabId) ?? tabs[0];
     return modules[activeTab.moduleId];
-  }, [activeTabId, tabs]);
+  }, [activeTabId, modules, tabs]);
 
   const handleSelect = (tabId: string) => {
     setActiveTabId(tabId);
     setTabs((prevTabs) =>
       prevTabs.map((tab) => ({
         ...tab,
-        isActive: tab.id === tabId
-      }))
+        isActive: tab.id === tabId,
+      })),
     );
   };
 
