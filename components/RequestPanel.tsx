@@ -1,6 +1,6 @@
 "use client";
 
-import type { Module } from "@/lib/types";
+import type { Module, Ticket } from "@/lib/types";
 
 type RequestPanelProps = {
   module: Module;
@@ -8,7 +8,7 @@ type RequestPanelProps = {
   dbId: string;
   loading: boolean;
   error: string | null;
-  tickets: string[];
+  tickets: Ticket[];
   hasSearched: boolean;
   onDocRefChange: (value: string) => void;
   onDbIdChange: (value: string) => void;
@@ -76,13 +76,13 @@ export default function RequestPanel({
           <table>
             <thead>
               <tr>
-                <th>Ticket</th>
+                <th>Ticket ID</th>
               </tr>
             </thead>
             <tbody>
               {tickets.map((ticket, index) => (
-                <tr key={`${ticket}-${index}`}>
-                  <td>{ticket}</td>
+                <tr key={`${ticket.TICKET_ID}-${ticket.REF_ID}-${index}`}>
+                  <td>{ticket.TICKET_ID}</td>
                 </tr>
               ))}
             </tbody>

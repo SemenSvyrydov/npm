@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Module } from "@/lib/types";
+import type { Module, Ticket } from "@/lib/types";
 import ModuleView from "@/components/ModuleView";
 import RequestPanel from "@/components/RequestPanel";
 
@@ -9,11 +9,14 @@ type MainAreaProps = {
   module: Module;
 };
 
-const normalizeString = (value: unknown) => {
+const normalizeTicketField = (value: unknown) => {
+  if (value === null || value === undefined) {
+    return "";
+  }
   if (typeof value === "string") {
     return value;
   }
-  return JSON.stringify(value);
+  return String(value);
 };
 
 const extractDocIds = (data: unknown) => {
@@ -43,25 +46,41 @@ const extractDocIds = (data: unknown) => {
   return [];
 };
 
-const extractTickets = (data: unknown) => {
-  if (Array.isArray(data)) {
-    return data.map(normalizeString);
+const mapTicket = (item: unknown): Ticket | null => {
+  if (!item || typeof item !== "object") {
+    return null;
   }
 
-  if (data && typeof data === "object") {
-    const container = data as { tickets?: unknown };
-    if (Array.isArray(container.tickets)) {
-      return container.tickets.map(normalizeString);
-    }
-  }
+  const record = item as Record<string, unknown>;
 
-  return [];
+  return {
+    TICKET_ID: normalizeTicketField(record.TICKET_ID),
+    REF_ID: normalizeTicketField(record.REF_ID),
+    CASE_NUMBER: normalizeTicketField(record.CASE_NUMBER),
+    DESCRIPTION: normalizeTicketField(record.DESCRIPTION),
+    DT_STATUS: normalizeTicketField(record.DT_STATUS),
+    DELIVERED_AT: normalizeTicketField(record.DELIVERED_AT),
+    USER_NAME: normalizeTicketField(record.USER_NAME),
+    CODE: normalizeTicketField(record.CODE),
+  };
+};
+
+const extractTickets = (data: unknown): Ticket[] => {
+  const source = Array.isArray(data)
+    ? data
+    : data && typeof data === "object" && Array.isArray((data as { tickets?: unknown }).tickets)
+    ? (data as { tickets?: unknown }).tickets
+    : [];
+
+  return source
+    .map(mapTicket)
+    .filter((ticket): ticket is Ticket => Boolean(ticket));
 };
 
 export default function MainArea({ module }: MainAreaProps) {
   const [docRef, setDocRef] = useState("");
   const [dbId, setDbId] = useState("");
-  const [tickets, setTickets] = useState<string[]>([]);
+  const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
@@ -102,8 +121,8 @@ export default function MainArea({ module }: MainAreaProps) {
     setTickets([]);
     setHasSearched(true);
 
-    const results: string[] = [];
     const errors: string[] = [];
+    const collectedTickets: Ticket[] = [];
 
     try {
       for (const docRefValue of docRefs) {
@@ -122,7 +141,6 @@ export default function MainArea({ module }: MainAreaProps) {
           const docIds = extractDocIds(documentsPayload);
 
           if (docIds.length === 0) {
-            results.push(`${docRefValue}: документы не найдены`);
             continue;
           }
 
@@ -137,13 +155,10 @@ export default function MainArea({ module }: MainAreaProps) {
               const ticketItems = extractTickets(ticketsPayload);
 
               if (ticketItems.length === 0) {
-                results.push(`${docRefValue} / ${docId}: билеты не найдены`);
                 continue;
               }
 
-              ticketItems.forEach((ticket) => {
-                results.push(`${docRefValue} / ${docId}: ${ticket}`);
-              });
+              collectedTickets.push(...ticketItems);
             } catch (ticketError) {
               const message =
                 ticketError instanceof Error
@@ -168,13 +183,13 @@ export default function MainArea({ module }: MainAreaProps) {
       setError(errors.join(" | "));
     }
 
-    setTickets(results);
+    setTickets(collectedTickets);
   };
 
   return (
     <main>
       <div className="main-grid">
-        <ModuleView module={module} />
+        <ModuleView module={module} tickets={tickets} />
         <RequestPanel
           module={module}
           docRef={docRef}
