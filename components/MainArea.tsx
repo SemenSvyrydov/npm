@@ -5,6 +5,7 @@ import type { Module, Ticket } from "@/lib/types";
 import { CASE_API_TIMEOUT_MS } from "@/lib/timeouts";
 import ModuleView from "@/components/ModuleView";
 import RequestPanel from "@/components/RequestPanel";
+import RequestProgress from "@/components/RequestProgress";
 
 type MainAreaProps = {
   module: Module;
@@ -110,6 +111,16 @@ export default function MainArea({ module }: MainAreaProps) {
   const [currentDocId, setCurrentDocId] = useState<string | null>(null);
   const [currentStartedAt, setCurrentStartedAt] = useState<number | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [progress, setProgress] = useState({
+    totalDocRefs: 0,
+    processedDocRefs: 0,
+    totalDocIds: 0,
+    processedDocIds: 0,
+    successDocRefs: 0,
+    successDocIds: 0,
+    errorCount: 0,
+  });
+  const [requestErrors, setRequestErrors] = useState<string[]>([]);
 
   useEffect(() => {
     if (!loading || currentStartedAt === null) {
@@ -197,6 +208,16 @@ export default function MainArea({ module }: MainAreaProps) {
     setCurrentDocRef(null);
     setCurrentDocId(null);
     setCurrentStartedAt(Date.now());
+    setProgress({
+      totalDocRefs: docRefs.length,
+      processedDocRefs: 0,
+      totalDocIds: 0,
+      processedDocIds: 0,
+      successDocRefs: 0,
+      successDocIds: 0,
+      errorCount: 0,
+    });
+    setRequestErrors([]);
 
     const errors: string[] = [];
     const collectedTickets: Ticket[] = [];
@@ -205,6 +226,8 @@ export default function MainArea({ module }: MainAreaProps) {
 
     try {
       await runWithConcurrency(docRefs, concurrencyLimit, async (docRefValue) => {
+        let docRefSucceeded = false;
+
         try {
           setCurrentDocRef(docRefValue);
           setCurrentDocId(null);
@@ -258,10 +281,15 @@ export default function MainArea({ module }: MainAreaProps) {
             documentsUrl,
             elapsedMs: performance.now() - documentsParseStart,
           });
+          docRefSucceeded = true;
+
           const docIds = extractDocIds(documentsPayload);
 
-          if (docIds.length === 0) {
-            return;
+          if (docIds.length > 0) {
+            setProgress((prev) => ({
+              ...prev,
+              totalDocIds: prev.totalDocIds + docIds.length,
+            }));
           }
 
           for (const docId of docIds) {
@@ -316,6 +344,13 @@ export default function MainArea({ module }: MainAreaProps) {
                 docId,
                 ticketsCount: ticketItems.length,
               });
+
+              setProgress((prev) => ({
+                ...prev,
+                processedDocIds: prev.processedDocIds + 1,
+                successDocIds: prev.successDocIds + 1,
+              }));
+
               if (ticketItems.length === 0) {
                 continue;
               }
@@ -327,6 +362,11 @@ export default function MainArea({ module }: MainAreaProps) {
                   ? ticketError.message
                   : "Неизвестная ошибка";
               errors.push(`${docRefValue} / ${docId}: ${message}`);
+              setProgress((prev) => ({
+                ...prev,
+                processedDocIds: prev.processedDocIds + 1,
+                errorCount: prev.errorCount + 1,
+              }));
             }
           }
         } catch (documentsError) {
@@ -335,6 +375,16 @@ export default function MainArea({ module }: MainAreaProps) {
               ? documentsError.message
               : "Неизвестная ошибка";
           errors.push(`${docRefValue}: ${message}`);
+          setProgress((prev) => ({
+            ...prev,
+            errorCount: prev.errorCount + 1,
+          }));
+        } finally {
+          setProgress((prev) => ({
+            ...prev,
+            processedDocRefs: prev.processedDocRefs + 1,
+            successDocRefs: prev.successDocRefs + (docRefSucceeded ? 1 : 0),
+          }));
         }
       });
     } finally {
@@ -346,22 +396,22 @@ export default function MainArea({ module }: MainAreaProps) {
     if (errors.length > 0) {
       setError(errors.join(" | "));
     }
+    setRequestErrors(errors);
 
     setTickets(collectedTickets);
   };
 
   return (
     <main>
-      {hasSearched && (
-        <div className="request-status">
-          <p>
-            Текущий docRef:{" "}
-            {currentDocRef ? currentDocRef : loading ? "ожидание..." : "—"}
-          </p>
-          <p>Текущий docId: {currentDocId ? currentDocId : "—"}</p>
-          <p>Таймер: {loading ? `${elapsedSeconds} сек.` : "—"}</p>
-        </div>
-      )}
+      <RequestProgress
+        visible={hasSearched}
+        loading={loading}
+        elapsedSeconds={elapsedSeconds}
+        currentDocRef={currentDocRef}
+        currentDocId={currentDocId}
+        progress={progress}
+        errors={requestErrors}
+      />
       <div className="main-grid">
         <ModuleView module={module} tickets={tickets} />
         <RequestPanel
