@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { CASE_API_CONCURRENCY_LIMIT } from "@/lib/case-api-limits";
 import type { Module, Ticket } from "@/lib/types";
 import { CASE_API_TIMEOUT_SECONDS } from "@/lib/timeouts";
 
@@ -9,16 +8,12 @@ type RequestPanelProps = {
   module: Module;
   docRef: string;
   dbId: string;
-  docRefConcurrency: number;
-  docIdConcurrency: number;
   loading: boolean;
   error: string | null;
   tickets: Ticket[];
   hasSearched: boolean;
   onDocRefChange: (value: string) => void;
   onDbIdChange: (value: string) => void;
-  onDocRefConcurrencyChange: (value: number) => void;
-  onDocIdConcurrencyChange: (value: number) => void;
   onSubmit: () => void;
 };
 
@@ -26,16 +21,12 @@ export default function RequestPanel({
   module,
   docRef,
   dbId,
-  docRefConcurrency,
-  docIdConcurrency,
   loading,
   error,
   tickets,
   hasSearched,
   onDocRefChange,
   onDbIdChange,
-  onDocRefConcurrencyChange,
-  onDocIdConcurrencyChange,
   onSubmit,
 }: RequestPanelProps) {
   const [copyState, setCopyState] = useState<"idle" | "success" | "error">(
@@ -70,7 +61,10 @@ export default function RequestPanel({
   return (
     <aside className="card">
       <h3>Контекстные действия</h3>
-      <p>Настройки запросов для модуля: {module.name}.</p>
+      <p>
+        Настройки запросов для модуля: {module.name}. Параллельность
+        обрабатывается автоматически на сервере.
+      </p>
 
       <div className="request-panel__inputs">
         <label className="request-panel__label">
@@ -92,42 +86,6 @@ export default function RequestPanel({
             pattern="\\d*"
             placeholder="1"
           />
-        </label>
-        <label className="request-panel__label">
-          Кол-во одновременно обрабатываемых docRef
-          <input
-            type="number"
-            min={1}
-            max={10}
-            step={1}
-            value={docRefConcurrency}
-            onChange={(event) =>
-              onDocRefConcurrencyChange(Number(event.target.value))
-            }
-            placeholder="1"
-          />
-          <span className="request-panel__hint">
-            Допустимый диапазон: от 1 до 10, по умолчанию 1. Серверный лимит: до{" "}
-            {CASE_API_CONCURRENCY_LIMIT} одновременных запросов.
-          </span>
-        </label>
-        <label className="request-panel__label">
-          Кол-во одновременно обрабатываемых docId
-          <input
-            type="number"
-            min={1}
-            max={10}
-            step={1}
-            value={docIdConcurrency}
-            onChange={(event) =>
-              onDocIdConcurrencyChange(Number(event.target.value))
-            }
-            placeholder="2"
-          />
-          <span className="request-panel__hint">
-            Допустимый диапазон: от 1 до 10, по умолчанию 2. Серверный лимит: до{" "}
-            {CASE_API_CONCURRENCY_LIMIT} одновременных запросов.
-          </span>
         </label>
       </div>
 

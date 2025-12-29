@@ -8,6 +8,7 @@ import {
   CASE_API_QUEUE_TIMEOUT_SECONDS,
   caseApiSemaphore,
 } from "@/lib/server/case-api-semaphore";
+import { withUpstreamLimit } from "@/lib/upstreamLimiter";
 
 const BASE_URL = "http://10.1.10.224:8080/api/case/doc";
 const RETRY_DELAYS_MS = [200, 500, 1000];
@@ -35,14 +36,16 @@ const fetchWithRetry = async ({
     const timeoutId = setTimeout(() => controller.abort(), CASE_API_TIMEOUT_MS);
 
     try {
-      const response = await fetch(targetUrl, {
-        method: "GET",
-        headers: {
-          accept: "application/json",
-        },
-        cache: "no-store",
-        signal: controller.signal,
-      });
+      const response = await withUpstreamLimit(() =>
+        fetch(targetUrl, {
+          method: "GET",
+          headers: {
+            accept: "application/json",
+          },
+          cache: "no-store",
+          signal: controller.signal,
+        }),
+      );
 
       if (RETRY_STATUS_CODES.has(response.status)) {
         lastUpstreamStatus = response.status;
