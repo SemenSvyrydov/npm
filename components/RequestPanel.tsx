@@ -70,11 +70,11 @@ export default function RequestPanel({
       <div className="request-panel__inputs">
         <label className="request-panel__label">
           docRef (через запятую)
-          <input
-            type="text"
+          <textarea
             value={docRef}
             onChange={(event) => onDocRefChange(event.target.value)}
             placeholder="DOC-001, DOC-002"
+            rows={4}
           />
         </label>
         <label className="request-panel__label">
@@ -111,36 +111,55 @@ export default function RequestPanel({
 
       {tickets.length > 0 && (
         <div className="request-panel__results">
-          <div className="request-panel__results-header">
-            <h4>Результаты</h4>
-            <div className="request-panel__copy">
-              <button
-                type="button"
-                className="tab-button"
-                onClick={handleCopyAllTickets}
-                disabled={!ticketIdsText}
-              >
-                Скопировать все TICKET_ID
-              </button>
-              {copied && (
-                <span className="request-panel__copied">Скопировано</span>
-              )}
-            </div>
-          </div>
-          <table>
-            <thead>
-              <tr>
-                <th>Ticket ID</th>
-              </tr>
-            </thead>
-            <tbody>
-              {tickets.map((ticket, index) => (
-                <tr key={`${ticket.TICKET_ID}-${ticket.REF_ID}-${index}`}>
-                  <td>{ticket.TICKET_ID}</td>
+{tickets.length > 0 && (
+  <div className="request-panel__results">
+    <div className="request-panel__results-header">
+      <h4>Результаты</h4>
+      <div className="request-panel__copy">
+        <button
+          type="button"
+          className="tab-button"
+          onClick={handleCopyAllTickets}
+          disabled={!ticketIdsText}
+        >
+          Скопировать все TICKET_ID
+        </button>
+        {copied && (
+          <span className="request-panel__copied">Скопировано</span>
+        )}
+      </div>
+    </div>
+
+    <div className="table-scroll">
+      <table className="table">
+        <thead>
+          <tr>
+            <th>Ticket ID</th>
+          </tr>
+        </thead>
+        <tbody>
+          {tickets.map((ticket, index) => (
+            <tr key={`${ticket.TICKET_ID}-${ticket.REF_ID}-${index}`}>
+              <td>{ticket.TICKET_ID}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </div>
+)}
+
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {tickets.map((ticket, index) => (
+                  <tr key={`${ticket.TICKET_ID}-${ticket.REF_ID}-${index}`}>
+                    <td>{ticket.TICKET_ID}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </aside>
