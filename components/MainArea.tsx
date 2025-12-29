@@ -121,6 +121,7 @@ export default function MainArea({ module }: MainAreaProps) {
     errorCount: 0,
   });
   const [requestErrors, setRequestErrors] = useState<string[]>([]);
+  const [noTicketsDocIds, setNoTicketsDocIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (!loading || currentStartedAt === null) {
@@ -218,11 +219,13 @@ export default function MainArea({ module }: MainAreaProps) {
       errorCount: 0,
     });
     setRequestErrors([]);
+    setNoTicketsDocIds([]);
 
     const errors: string[] = [];
+    const emptyTickets: string[] = [];
     const collectedTickets: Ticket[] = [];
     const timeoutMs = CASE_API_TIMEOUT_MS;
-    const concurrencyLimit = 3;
+    const concurrencyLimit = 1;
 
     try {
       await runWithConcurrency(docRefs, concurrencyLimit, async (docRefValue) => {
@@ -352,6 +355,7 @@ export default function MainArea({ module }: MainAreaProps) {
               }));
 
               if (ticketItems.length === 0) {
+                emptyTickets.push(`${docRefValue} / ${docId}`);
                 continue;
               }
 
@@ -397,6 +401,7 @@ export default function MainArea({ module }: MainAreaProps) {
       setError(errors.join(" | "));
     }
     setRequestErrors(errors);
+    setNoTicketsDocIds(emptyTickets);
 
     setTickets(collectedTickets);
   };
@@ -411,6 +416,7 @@ export default function MainArea({ module }: MainAreaProps) {
         currentDocId={currentDocId}
         progress={progress}
         errors={requestErrors}
+        emptyTickets={noTicketsDocIds}
       />
       <div className="main-grid">
         <ModuleView module={module} tickets={tickets} />

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { Module, Ticket } from "@/lib/types";
 import { CASE_API_TIMEOUT_SECONDS } from "@/lib/timeouts";
 
@@ -28,6 +29,35 @@ export default function RequestPanel({
   onDbIdChange,
   onSubmit,
 }: RequestPanelProps) {
+  const [copyState, setCopyState] = useState<"idle" | "success" | "error">(
+    "idle",
+  );
+
+  const handleCopyTickets = async () => {
+    if (tickets.length === 0) {
+      return;
+    }
+
+    const ticketIds = tickets
+      .map((ticket) => ticket.TICKET_ID)
+      .filter(Boolean)
+      .join(", ");
+
+    if (!ticketIds) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(ticketIds);
+      setCopyState("success");
+      window.setTimeout(() => setCopyState("idle"), 2000);
+    } catch (copyError) {
+      console.error(copyError);
+      setCopyState("error");
+      window.setTimeout(() => setCopyState("idle"), 2000);
+    }
+  };
+
   return (
     <aside className="card">
       <h3>Контекстные действия</h3>
@@ -36,8 +66,8 @@ export default function RequestPanel({
       <div className="request-panel__inputs">
         <label className="request-panel__label">
           docRef (через запятую)
-          <input
-            type="text"
+          <textarea
+            rows={4}
             value={docRef}
             onChange={(event) => onDocRefChange(event.target.value)}
             placeholder="DOC-001, DOC-002"
@@ -72,26 +102,41 @@ export default function RequestPanel({
       {error && <p className="request-panel__error">{error}</p>}
 
       {hasSearched && !loading && tickets.length === 0 && !error && (
-        <p className="request-panel__empty">Нет результатов.</p>
+        <p className="request-panel__empty">Нет результатів.</p>
       )}
 
       {tickets.length > 0 && (
         <div className="request-panel__results">
-          <h4>Результаты</h4>
-          <table>
-            <thead>
-              <tr>
-                <th>Ticket ID</th>
-              </tr>
-            </thead>
-            <tbody>
-              {tickets.map((ticket, index) => (
-                <tr key={`${ticket.TICKET_ID}-${ticket.REF_ID}-${index}`}>
-                  <td>{ticket.TICKET_ID}</td>
+          <div className="request-panel__results-header">
+            <h4>Тікети</h4>
+            <button
+              type="button"
+              className="tab-button"
+              onClick={handleCopyTickets}
+            >
+              {copyState === "success"
+                ? "Скопійовано"
+                : copyState === "error"
+                ? "Помилка копіювання"
+                : "Скопіювати всі TICKET_ID"}
+            </button>
+          </div>
+          <div className="table-wrapper">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Тікет ID</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {tickets.map((ticket, index) => (
+                  <tr key={`${ticket.TICKET_ID}-${ticket.REF_ID}-${index}`}>
+                    <td>{ticket.TICKET_ID}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </aside>
