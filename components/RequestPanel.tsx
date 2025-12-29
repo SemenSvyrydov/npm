@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { CASE_API_CONCURRENCY_LIMIT } from "@/lib/case-api-limits";
 import type { Module, Ticket } from "@/lib/types";
 import { CASE_API_TIMEOUT_SECONDS } from "@/lib/timeouts";
 
@@ -106,7 +107,8 @@ export default function RequestPanel({
             placeholder="1"
           />
           <span className="request-panel__hint">
-            Допустимый диапазон: от 1 до 10, по умолчанию 1.
+            Допустимый диапазон: от 1 до 10, по умолчанию 1. Серверный лимит: до{" "}
+            {CASE_API_CONCURRENCY_LIMIT} одновременных запросов.
           </span>
         </label>
         <label className="request-panel__label">
@@ -123,7 +125,8 @@ export default function RequestPanel({
             placeholder="2"
           />
           <span className="request-panel__hint">
-            Допустимый диапазон: от 1 до 10, по умолчанию 2.
+            Допустимый диапазон: от 1 до 10, по умолчанию 2. Серверный лимит: до{" "}
+            {CASE_API_CONCURRENCY_LIMIT} одновременных запросов.
           </span>
         </label>
       </div>

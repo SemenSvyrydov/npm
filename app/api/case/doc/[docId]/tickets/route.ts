@@ -1,5 +1,13 @@
 import { NextResponse } from "next/server";
+import {
+  CASE_API_CONCURRENCY_LIMIT,
+  CASE_API_QUEUE_TIMEOUT_MS,
+} from "@/lib/case-api-limits";
 import { CASE_API_TIMEOUT_MS } from "@/lib/timeouts";
+import {
+  CASE_API_QUEUE_TIMEOUT_SECONDS,
+  caseApiSemaphore,
+} from "@/lib/server/case-api-semaphore";
 
 const BASE_URL = "http://10.1.10.224:8080/api/case/doc";
 const RETRY_DELAYS_MS = [200, 500, 1000];
@@ -22,12 +30,44 @@ export async function GET(
   );
   let lastError: Error | null = null;
   let lastUpstreamStatus: number | null = null;
+  const queueStartedAt = Date.now();
+  const acquired = await caseApiSemaphore.acquire(CASE_API_QUEUE_TIMEOUT_MS);
+
+  if (!acquired) {
+    const queueDurationMs = Date.now() - queueStartedAt;
+    console.warn("Tickets request rejected due to concurrency limit.", {
+      requestId,
+      targetUrl: targetUrl.toString(),
+      startedAt: requestStartedAtIso,
+      queueDurationMs,
+      limit: CASE_API_CONCURRENCY_LIMIT,
+      queued: caseApiSemaphore.queued,
+      inFlight: caseApiSemaphore.inFlight,
+    });
+
+    return NextResponse.json(
+      {
+        error: "Server is busy. Reduce parallelism and try again.",
+        requestId,
+        limit: CASE_API_CONCURRENCY_LIMIT,
+      },
+      {
+        status: 429,
+        headers: {
+          "retry-after": CASE_API_QUEUE_TIMEOUT_SECONDS.toString(),
+        },
+      },
+    );
+  }
+
+  const queueDurationMs = Date.now() - queueStartedAt;
 
   try {
     console.info("Tickets request started.", {
       requestId,
       targetUrl: targetUrl.toString(),
       startedAt: requestStartedAtIso,
+      queueDurationMs,
     });
 
     for (let attempt = 0; attempt < RETRY_DELAYS_MS.length; attempt += 1) {
@@ -172,5 +212,7 @@ export async function GET(
       },
       { status: 502 },
     );
+  } finally {
+    caseApiSemaphore.release();
   }
 }
