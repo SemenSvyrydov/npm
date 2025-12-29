@@ -230,6 +230,27 @@ main {
   font-size: 13px;
 }
 
+.request-panel__results-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.request-panel__copy {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.request-panel__copied {
+  font-size: 12px;
+  color: #16a34a;
+  font-weight: 600;
+}
+
 .request-panel__inputs input,
 .request-panel__inputs textarea {
   width: 100%;
@@ -241,6 +262,7 @@ main {
 .request-panel__inputs textarea {
   min-height: 96px;
   resize: vertical;
+}
 }
 
 @media (max-width: 900px) {
