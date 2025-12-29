@@ -23,7 +23,7 @@ export async function GET(request: Request) {
       signal: controller.signal,
     });
 
-    const body = await response.text();
+    const body = response.body ?? (await response.text());
 
     return new NextResponse(body, {
       status: response.status,
