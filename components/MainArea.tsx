@@ -103,6 +103,7 @@ const extractTickets = (data: unknown): Ticket[] => {
 export default function MainArea({ module }: MainAreaProps) {
   const [docRef, setDocRef] = useState("");
   const [dbId, setDbId] = useState("");
+  const [docRefConcurrency, setDocRefConcurrency] = useState(1);
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -179,6 +180,14 @@ export default function MainArea({ module }: MainAreaProps) {
     setDbId(value.replace(/\D/g, ""));
   };
 
+  const handleDocRefConcurrencyChange = (value: number) => {
+    if (Number.isNaN(value)) {
+      setDocRefConcurrency(1);
+      return;
+    }
+    setDocRefConcurrency(Math.min(10, Math.max(1, Math.trunc(value))));
+  };
+
   const handleSubmit = async () => {
     const docRefs = Array.from(
       new Set(
@@ -225,7 +234,7 @@ export default function MainArea({ module }: MainAreaProps) {
     const emptyTickets: string[] = [];
     const collectedTickets: Ticket[] = [];
     const timeoutMs = CASE_API_TIMEOUT_MS;
-    const concurrencyLimit = 1;
+    const concurrencyLimit = docRefConcurrency;
 
     try {
       await runWithConcurrency(docRefs, concurrencyLimit, async (docRefValue) => {
@@ -424,12 +433,14 @@ export default function MainArea({ module }: MainAreaProps) {
           module={module}
           docRef={docRef}
           dbId={dbId}
+          docRefConcurrency={docRefConcurrency}
           loading={loading}
           error={error}
           tickets={tickets}
           hasSearched={hasSearched}
           onDocRefChange={handleDocRefChange}
           onDbIdChange={handleDbIdChange}
+          onDocRefConcurrencyChange={handleDocRefConcurrencyChange}
           onSubmit={handleSubmit}
         />
       </div>
