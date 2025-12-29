@@ -78,20 +78,22 @@ export default function RequestPanel({
       {tickets.length > 0 && (
         <div className="request-panel__results">
           <h4>Результаты</h4>
-          <table>
-            <thead>
-              <tr>
-                <th>Ticket ID</th>
-              </tr>
-            </thead>
-            <tbody>
-              {tickets.map((ticket, index) => (
-                <tr key={`${ticket.TICKET_ID}-${ticket.REF_ID}-${index}`}>
-                  <td>{ticket.TICKET_ID}</td>
+          <div className="table-scroll">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Ticket ID</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {tickets.map((ticket, index) => (
+                  <tr key={`${ticket.TICKET_ID}-${ticket.REF_ID}-${index}`}>
+                    <td>{ticket.TICKET_ID}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </aside>
