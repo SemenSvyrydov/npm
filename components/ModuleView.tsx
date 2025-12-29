@@ -28,35 +28,37 @@ export default function ModuleView({ module, tickets }: ModuleViewProps) {
           </span>
         ))}
       </div>
-      <table className="table">
-        <thead>
-          <tr>
-            {ticketColumns.map((column) => (
-              <th key={column}>{column}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {tickets.length === 0 ? (
+      <div className="table-scroll">
+        <table className="table">
+          <thead>
             <tr>
-              <td colSpan={ticketColumns.length}>Нет данных</td>
+              {ticketColumns.map((column) => (
+                <th key={column}>{column}</th>
+              ))}
             </tr>
-          ) : (
-            tickets.map((ticket, index) => (
-              <tr key={ticket.TICKET_ID || `${ticket.REF_ID}-${index}`}>
-                <td>{ticket.TICKET_ID}</td>
-                <td>{ticket.REF_ID}</td>
-                <td>{ticket.CASE_NUMBER}</td>
-                <td>{ticket.DESCRIPTION}</td>
-                <td>{ticket.DT_STATUS}</td>
-                <td>{ticket.DELIVERED_AT}</td>
-                <td>{ticket.USER_NAME}</td>
-                <td>{ticket.CODE}</td>
+          </thead>
+          <tbody>
+            {tickets.length === 0 ? (
+              <tr>
+                <td colSpan={ticketColumns.length}>Нет данных</td>
               </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+            ) : (
+              tickets.map((ticket, index) => (
+                <tr key={ticket.TICKET_ID || `${ticket.REF_ID}-${index}`}>
+                  <td>{ticket.TICKET_ID}</td>
+                  <td>{ticket.REF_ID}</td>
+                  <td>{ticket.CASE_NUMBER}</td>
+                  <td>{ticket.DESCRIPTION}</td>
+                  <td>{ticket.DT_STATUS}</td>
+                  <td>{ticket.DELIVERED_AT}</td>
+                  <td>{ticket.USER_NAME}</td>
+                  <td>{ticket.CODE}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
     </section>
   );
 }

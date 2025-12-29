@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useMemo, useRef, useState } from "react";
+
 import type { Module, Ticket } from "@/lib/types";
 import { CASE_API_TIMEOUT_SECONDS } from "@/lib/timeouts";
 
@@ -28,6 +30,38 @@ export default function RequestPanel({
   onDbIdChange,
   onSubmit,
 }: RequestPanelProps) {
+  const ticketIdsText = useMemo(
+    () => tickets.map((ticket) => ticket.TICKET_ID).filter(Boolean).join(", "),
+    [tickets],
+  );
+  const [copied, setCopied] = useState(false);
+  const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (copyTimeoutRef.current) {
+        clearTimeout(copyTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleCopyAllTickets = async () => {
+    if (!ticketIdsText) {
+      return;
+    }
+
+    await navigator.clipboard.writeText(ticketIdsText);
+    setCopied(true);
+
+    if (copyTimeoutRef.current) {
+      clearTimeout(copyTimeoutRef.current);
+    }
+
+    copyTimeoutRef.current = setTimeout(() => {
+      setCopied(false);
+    }, 2500);
+  };
+
   return (
     <aside className="card">
       <h3>Контекстные действия</h3>
@@ -36,11 +70,11 @@ export default function RequestPanel({
       <div className="request-panel__inputs">
         <label className="request-panel__label">
           docRef (через запятую)
-          <input
-            type="text"
+          <textarea
             value={docRef}
             onChange={(event) => onDocRefChange(event.target.value)}
             placeholder="DOC-001, DOC-002"
+            rows={4}
           />
         </label>
         <label className="request-panel__label">
@@ -77,21 +111,54 @@ export default function RequestPanel({
 
       {tickets.length > 0 && (
         <div className="request-panel__results">
-          <h4>Результаты</h4>
-          <table>
-            <thead>
-              <tr>
-                <th>Тікет ID</th>
-              </tr>
-            </thead>
-            <tbody>
-              {tickets.map((ticket, index) => (
-                <tr key={`${ticket.TICKET_ID}-${ticket.REF_ID}-${index}`}>
-                  <td>{ticket.TICKET_ID}</td>
+{tickets.length > 0 && (
+  <div className="request-panel__results">
+    <div className="request-panel__results-header">
+      <h4>Результаты</h4>
+      <div className="request-panel__copy">
+        <button
+          type="button"
+          className="tab-button"
+          onClick={handleCopyAllTickets}
+          disabled={!ticketIdsText}
+        >
+          Скопировать все TICKET_ID
+        </button>
+        {copied && (
+          <span className="request-panel__copied">Скопировано</span>
+        )}
+      </div>
+    </div>
+
+    <div className="table-scroll">
+      <table className="table">
+        <thead>
+          <tr>
+            <th>Ticket ID</th>
+          </tr>
+        </thead>
+        <tbody>
+          {tickets.map((ticket, index) => (
+            <tr key={`${ticket.TICKET_ID}-${ticket.REF_ID}-${index}`}>
+              <td>{ticket.TICKET_ID}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </div>
+)}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {tickets.map((ticket, index) => (
+                  <tr key={`${ticket.TICKET_ID}-${ticket.REF_ID}-${index}`}>
+                    <td>{ticket.TICKET_ID}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </aside>

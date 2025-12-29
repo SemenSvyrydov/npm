@@ -182,7 +182,7 @@ export default function MainArea({ module }: MainAreaProps) {
     const docRefs = Array.from(
       new Set(
         docRef
-          .split(",")
+          .split(/[,\n\r]+/)
           .map((value) => value.trim())
           .filter(Boolean),
       ),
