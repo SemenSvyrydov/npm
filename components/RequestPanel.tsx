@@ -148,7 +148,6 @@ export default function RequestPanel({
     </div>
   </div>
 )}
-
                 </tr>
               </thead>
               <tbody>
