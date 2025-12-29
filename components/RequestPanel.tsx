@@ -9,6 +9,7 @@ type RequestPanelProps = {
   docRef: string;
   dbId: string;
   docRefConcurrency: number;
+  docIdConcurrency: number;
   loading: boolean;
   error: string | null;
   tickets: Ticket[];
@@ -16,6 +17,7 @@ type RequestPanelProps = {
   onDocRefChange: (value: string) => void;
   onDbIdChange: (value: string) => void;
   onDocRefConcurrencyChange: (value: number) => void;
+  onDocIdConcurrencyChange: (value: number) => void;
   onSubmit: () => void;
 };
 
@@ -24,6 +26,7 @@ export default function RequestPanel({
   docRef,
   dbId,
   docRefConcurrency,
+  docIdConcurrency,
   loading,
   error,
   tickets,
@@ -31,6 +34,7 @@ export default function RequestPanel({
   onDocRefChange,
   onDbIdChange,
   onDocRefConcurrencyChange,
+  onDocIdConcurrencyChange,
   onSubmit,
 }: RequestPanelProps) {
   const [copyState, setCopyState] = useState<"idle" | "success" | "error">(
@@ -103,6 +107,23 @@ export default function RequestPanel({
           />
           <span className="request-panel__hint">
             Допустимый диапазон: от 1 до 10, по умолчанию 1.
+          </span>
+        </label>
+        <label className="request-panel__label">
+          Кол-во одновременно обрабатываемых docId
+          <input
+            type="number"
+            min={1}
+            max={10}
+            step={1}
+            value={docIdConcurrency}
+            onChange={(event) =>
+              onDocIdConcurrencyChange(Number(event.target.value))
+            }
+            placeholder="2"
+          />
+          <span className="request-panel__hint">
+            Допустимый диапазон: от 1 до 10, по умолчанию 2.
           </span>
         </label>
       </div>
