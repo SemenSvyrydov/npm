@@ -20,12 +20,35 @@ const normalizeTicketField = (value: unknown) => {
 };
 
 const extractDocIds = (data: unknown) => {
+  const readDocId = (item: unknown): string | null => {
+    if (!item || typeof item !== "object") {
+      return null;
+    }
+
+    const record = item as Record<string, unknown>;
+    const candidates = [
+      record.docId,
+      record.docID,
+      record.docid,
+      record.DOC_ID,
+      record.DOCID,
+    ];
+
+    const value = candidates.find(
+      (candidate) => candidate !== null && candidate !== undefined && candidate !== "",
+    );
+
+    if (value === null || value === undefined) {
+      return null;
+    }
+
+    return String(value);
+  };
+
   if (Array.isArray(data)) {
     return data
-      .map((item) => (typeof item === "object" && item !== null ? item : null))
-      .map((item) => (item as { docId?: string | number } | null)?.docId)
-      .filter((docId): docId is string | number => Boolean(docId))
-      .map((docId) => docId.toString());
+      .map(readDocId)
+      .filter((docId): docId is string => Boolean(docId));
   }
 
   if (data && typeof data === "object") {
@@ -37,10 +60,8 @@ const extractDocIds = (data: unknown) => {
       : [];
 
     return candidate
-      .map((item) => (typeof item === "object" && item !== null ? item : null))
-      .map((item) => (item as { docId?: string | number } | null)?.docId)
-      .filter((docId): docId is string | number => Boolean(docId))
-      .map((docId) => docId.toString());
+      .map(readDocId)
+      .filter((docId): docId is string => Boolean(docId));
   }
 
   return [];
@@ -128,8 +149,14 @@ export default function MainArea({ module }: MainAreaProps) {
       for (const docRefValue of docRefs) {
         try {
           const documentsUrl = `/api/case/documents?${new URLSearchParams({
+            caseNum: "",
+            procNum: "",
             docRef: docRefValue,
+            docId: "",
+            courtName: "",
             dbId: normalizedDbId,
+            procRef: "",
+            caseId: "",
           }).toString()}`;
 
           const documentsResponse = await fetch(documentsUrl);
