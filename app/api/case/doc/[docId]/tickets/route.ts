@@ -6,6 +6,9 @@ export async function GET(
   _request: Request,
   context: { params: { docId: string } },
 ) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000);
+
   try {
     const targetUrl = new URL(
       `${BASE_URL}/${encodeURIComponent(context.params.docId)}/tickets`,
@@ -17,6 +20,7 @@ export async function GET(
         accept: "application/json",
       },
       cache: "no-store",
+      signal: controller.signal,
     });
 
     const body = await response.text();
@@ -28,7 +32,17 @@ export async function GET(
       },
     });
   } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      console.error("Tickets request timed out.");
+      return NextResponse.json(
+        { error: "Request timed out" },
+        { status: 504 },
+      );
+    }
+
     const message = error instanceof Error ? error.message : "Proxy error";
     return NextResponse.json({ error: message }, { status: 500 });
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
