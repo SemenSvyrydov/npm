@@ -68,6 +68,7 @@ export default function RequestPanel({ module }: RequestPanelProps) {
   const [tickets, setTickets] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasSearched, setHasSearched] = useState(false);
 
   const handleChange = (field: keyof InputsState) => (
     event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -76,10 +77,15 @@ export default function RequestPanel({ module }: RequestPanelProps) {
   };
 
   const handleSubmit = async () => {
-    const docRefs = inputs.docRef
+    const docRefs = Array.from(
+      new Set(
+        inputs.docRef
       .split(",")
       .map((value) => value.trim())
-      .filter(Boolean);
+            .filter(Boolean),
+      ),
+    );
+    const dbId = inputs.dbId.trim();
 
     if (docRefs.length === 0) {
       setError("Укажите хотя бы один docRef.");
@@ -87,7 +93,7 @@ export default function RequestPanel({ module }: RequestPanelProps) {
       return;
     }
 
-    if (!inputs.dbId.trim()) {
+    if (!dbId) {
       setError("Укажите dbId для поиска.");
       setTickets([]);
       return;
@@ -96,56 +102,62 @@ export default function RequestPanel({ module }: RequestPanelProps) {
     setLoading(true);
     setError(null);
     setTickets([]);
+    setHasSearched(true);
 
     const results: string[] = [];
     const errors: string[] = [];
 
-    for (const docRef of docRefs) {
-      try {
-        const documentsUrl = new URL("/api/case/documents", window.location.origin);
-        documentsUrl.searchParams.set("docRef", docRef);
-        documentsUrl.searchParams.set("dbId", inputs.dbId.trim());
+    try {
+      for (const docRef of docRefs) {
+        try {
+          const documentsUrl = `/api/case/documents?${new URLSearchParams({
+            docRef,
+            dbId,
+          }).toString()}`;
 
-        const documentsResponse = await fetch(documentsUrl.toString());
-        if (!documentsResponse.ok) {
-          throw new Error(`Ошибка документов: ${documentsResponse.status}`);
-        }
-
-        const documentsPayload = await documentsResponse.json();
-        const docIds = extractDocIds(documentsPayload);
-
-        if (docIds.length === 0) {
-          results.push(`${docRef}: документы не найдены`);
-          continue;
-        }
-
-        for (const docId of docIds) {
-          try {
-            const ticketsResponse = await fetch(`/api/case/doc/${docId}/tickets`);
-            if (!ticketsResponse.ok) {
-              throw new Error(`Ошибка билетов: ${ticketsResponse.status}`);
-            }
-
-            const ticketsPayload = await ticketsResponse.json();
-            const ticketItems = extractTickets(ticketsPayload);
-
-            if (ticketItems.length === 0) {
-              results.push(`${docRef} / ${docId}: билеты не найдены`);
-              continue;
-            }
-
-            ticketItems.forEach((ticket) => {
-              results.push(`${docRef} / ${docId}: ${ticket}`);
-            });
-          } catch (ticketError) {
-            const message = ticketError instanceof Error ? ticketError.message : "Неизвестная ошибка";
-            errors.push(`${docRef} / ${docId}: ${message}`);
+          const documentsResponse = await fetch(documentsUrl);
+          if (!documentsResponse.ok) {
+            throw new Error(`Ошибка документов: ${documentsResponse.status}`);
           }
+
+          const documentsPayload = await documentsResponse.json();
+          const docIds = extractDocIds(documentsPayload);
+
+          if (docIds.length === 0) {
+            results.push(`${docRef}: документы не найдены`);
+            continue;
+          }
+
+          for (const docId of docIds) {
+            try {
+              const ticketsResponse = await fetch(`/api/case/doc/${docId}/tickets`);
+              if (!ticketsResponse.ok) {
+                throw new Error(`Ошибка билетов: ${ticketsResponse.status}`);
+              }
+
+              const ticketsPayload = await ticketsResponse.json();
+              const ticketItems = extractTickets(ticketsPayload);
+
+              if (ticketItems.length === 0) {
+                results.push(`${docRef} / ${docId}: билеты не найдены`);
+                continue;
+              }
+
+              ticketItems.forEach((ticket) => {
+                results.push(`${docRef} / ${docId}: ${ticket}`);
+              });
+            } catch (ticketError) {
+              const message = ticketError instanceof Error ? ticketError.message : "Неизвестная ошибка";
+              errors.push(`${docRef} / ${docId}: ${message}`);
+            }
+          }
+        } catch (documentsError) {
+          const message = documentsError instanceof Error ? documentsError.message : "Неизвестная ошибка";
+          errors.push(`${docRef}: ${message}`);
         }
-      } catch (documentsError) {
-        const message = documentsError instanceof Error ? documentsError.message : "Неизвестная ошибка";
-        errors.push(`${docRef}: ${message}`);
       }
+    } finally {
+      setLoading(false);
     }
 
     if (errors.length > 0) {
@@ -153,7 +165,6 @@ export default function RequestPanel({ module }: RequestPanelProps) {
     }
 
     setTickets(results);
-    setLoading(false);
   };
 
   return (
@@ -198,7 +209,7 @@ export default function RequestPanel({ module }: RequestPanelProps) {
 
       {error && <p className="request-panel__error">{error}</p>}
 
-      {!loading && tickets.length === 0 && !error && (
+      {hasSearched && !loading && tickets.length === 0 && !error && (
         <p className="request-panel__empty">Нет результатов.</p>
       )}
 
