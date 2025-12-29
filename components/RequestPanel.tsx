@@ -1,186 +1,44 @@
 "use client";
 
-import { useState, type ChangeEvent } from "react";
 import type { Module } from "@/lib/types";
 
 type RequestPanelProps = {
   module: Module;
+  docRef: string;
+  dbId: string;
+  loading: boolean;
+  error: string | null;
+  tickets: string[];
+  hasSearched: boolean;
+  onDocRefChange: (value: string) => void;
+  onDbIdChange: (value: string) => void;
+  onSubmit: () => void;
 };
 
-const normalizeString = (value: unknown) => {
-  if (typeof value === "string") {
-    return value;
-  }
-  return JSON.stringify(value);
-};
-
-const extractDocIds = (data: unknown) => {
-  if (Array.isArray(data)) {
-    return data
-      .map((item) => (typeof item === "object" && item !== null ? item : null))
-      .map((item) => (item as { docId?: string | number } | null)?.docId)
-      .filter((docId): docId is string | number => Boolean(docId))
-      .map((docId) => docId.toString());
-  }
-
-  if (data && typeof data === "object") {
-    const container = data as { documents?: unknown; data?: unknown };
-    const candidate = Array.isArray(container.documents)
-      ? container.documents
-      : Array.isArray(container.data)
-      ? container.data
-      : [];
-
-    return candidate
-      .map((item) => (typeof item === "object" && item !== null ? item : null))
-      .map((item) => (item as { docId?: string | number } | null)?.docId)
-      .filter((docId): docId is string | number => Boolean(docId))
-      .map((docId) => docId.toString());
-  }
-
-  return [];
-};
-
-const extractTickets = (data: unknown) => {
-  if (Array.isArray(data)) {
-    return data.map(normalizeString);
-  }
-
-  if (data && typeof data === "object") {
-    const container = data as { tickets?: unknown };
-    if (Array.isArray(container.tickets)) {
-      return container.tickets.map(normalizeString);
-    }
-  }
-
-  return [];
-};
-
-export default function RequestPanel({ module }: RequestPanelProps) {
-  const [docRef, setDocRef] = useState("");
-  const [dbId, setDbId] = useState("");
-  const [tickets, setTickets] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [hasSearched, setHasSearched] = useState(false);
-
-  const handleSubmit = async () => {
-    const docRefs = Array.from(
-      new Set(
-        docRef
-          .split(",")
-          .map((value) => value.trim())
-          .filter(Boolean),
-      ),
-    );
-    const normalizedDbId = dbId.trim();
-
-    if (docRefs.length === 0) {
-      setError("Укажите хотя бы один docRef.");
-      setTickets([]);
-      return;
-    }
-
-    if (!normalizedDbId) {
-      setError("Укажите dbId для поиска.");
-      setTickets([]);
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-    setTickets([]);
-    setHasSearched(true);
-
-    const results: string[] = [];
-    const errors: string[] = [];
-
-    try {
-      for (const docRef of docRefs) {
-        try {
-          const documentsUrl = `/api/case/documents?${new URLSearchParams({
-            docRef,
-            dbId: normalizedDbId,
-          }).toString()}`;
-
-          const documentsResponse = await fetch(documentsUrl);
-          if (!documentsResponse.ok) {
-            throw new Error(`Ошибка документов: ${documentsResponse.status}`);
-          }
-
-          const documentsPayload = await documentsResponse.json();
-          const docIds = extractDocIds(documentsPayload);
-
-          if (docIds.length === 0) {
-            results.push(`${docRef}: документы не найдены`);
-            continue;
-          }
-
-          for (const docId of docIds) {
-            try {
-              const ticketsResponse = await fetch(`/api/case/doc/${docId}/tickets`);
-              if (!ticketsResponse.ok) {
-                throw new Error(`Ошибка билетов: ${ticketsResponse.status}`);
-              }
-
-              const ticketsPayload = await ticketsResponse.json();
-              const ticketItems = extractTickets(ticketsPayload);
-
-              if (ticketItems.length === 0) {
-                results.push(`${docRef} / ${docId}: билеты не найдены`);
-                continue;
-              }
-
-              ticketItems.forEach((ticket) => {
-                results.push(`${docRef} / ${docId}: ${ticket}`);
-              });
-            } catch (ticketError) {
-              const message =
-                ticketError instanceof Error
-                  ? ticketError.message
-                  : "Неизвестная ошибка";
-              errors.push(`${docRef} / ${docId}: ${message}`);
-            }
-          }
-        } catch (documentsError) {
-          const message =
-            documentsError instanceof Error
-              ? documentsError.message
-              : "Неизвестная ошибка";
-          errors.push(`${docRef}: ${message}`);
-        }
-      }
-    } finally {
-      setLoading(false);
-    }
-
-    if (errors.length > 0) {
-      setError(errors.join(" | "));
-    }
-
-    setTickets(results);
-  };
-
+export default function RequestPanel({
+  module,
+  docRef,
+  dbId,
+  loading,
+  error,
+  tickets,
+  hasSearched,
+  onDocRefChange,
+  onDbIdChange,
+  onSubmit,
+}: RequestPanelProps) {
   return (
     <aside className="card">
       <h3>Контекстные действия</h3>
       <p>Настройки запросов для модуля: {module.name}.</p>
 
-      <ul>
-        {module.requestTypes.map((requestType) => (
-          <li key={requestType}>Сценарий: {requestType}</li>
-        ))}
-      </ul>
-
       <div className="request-panel__inputs">
         <label className="request-panel__label">
           docRef (через запятую)
-          <textarea
-            rows={3}
+          <input
+            type="text"
             value={docRef}
-            onChange={(event: ChangeEvent<HTMLTextAreaElement>) =>
-              setDocRef(event.target.value)
-            }
+            onChange={(event) => onDocRefChange(event.target.value)}
             placeholder="DOC-001, DOC-002"
           />
         </label>
@@ -189,9 +47,9 @@ export default function RequestPanel({ module }: RequestPanelProps) {
           <input
             type="text"
             value={dbId}
-            onChange={(event: ChangeEvent<HTMLInputElement>) =>
-              setDbId(event.target.value)
-            }
+            onChange={(event) => onDbIdChange(event.target.value)}
+            inputMode="numeric"
+            pattern="\\d*"
             placeholder="1"
           />
         </label>
@@ -200,7 +58,7 @@ export default function RequestPanel({ module }: RequestPanelProps) {
       <button
         type="button"
         className="tab-button tab-button--active"
-        onClick={handleSubmit}
+        onClick={onSubmit}
         disabled={loading}
       >
         {loading ? "Запрос выполняется..." : "Выполнить запрос"}

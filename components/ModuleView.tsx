@@ -2,7 +2,7 @@ import type { Module } from "@/lib/types";
 
 type ModuleViewProps = {
   module: Module;
-  tickets: Array<{
+  tickets?: Array<{
     TICKET_ID: string;
     REF_ID: string;
     CASE_NUMBER: string;
@@ -25,7 +25,7 @@ const ticketColumns = [
   "CODE"
 ] as const;
 
-export default function ModuleView({ module, tickets }: ModuleViewProps) {
+export default function ModuleView({ module, tickets = [] }: ModuleViewProps) {
   return (
     <section className="card">
       <h2>{module.name}</h2>
