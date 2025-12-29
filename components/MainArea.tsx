@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Module, Ticket } from "@/lib/types";
 import ModuleView from "@/components/ModuleView";
 import RequestPanel from "@/components/RequestPanel";
@@ -105,6 +105,58 @@ export default function MainArea({ module }: MainAreaProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
+  const [currentDocRef, setCurrentDocRef] = useState<string | null>(null);
+  const [currentDocId, setCurrentDocId] = useState<string | null>(null);
+  const [currentStartedAt, setCurrentStartedAt] = useState<number | null>(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+
+  useEffect(() => {
+    if (!loading || currentStartedAt === null) {
+      setElapsedSeconds(0);
+      return;
+    }
+
+    setElapsedSeconds(Math.floor((Date.now() - currentStartedAt) / 1000));
+    const interval = window.setInterval(() => {
+      setElapsedSeconds(Math.floor((Date.now() - currentStartedAt) / 1000));
+    }, 1000);
+
+    return () => window.clearInterval(interval);
+  }, [loading, currentStartedAt]);
+
+  const fetchWithTimeout = async (
+    input: RequestInfo | URL,
+    init: RequestInit | undefined,
+    timeoutMs: number,
+  ) => {
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      return await fetch(input, { ...init, signal: controller.signal });
+    } finally {
+      window.clearTimeout(timeoutId);
+    }
+  };
+
+  const runWithConcurrency = async <Item,>(
+    items: Item[],
+    limit: number,
+    worker: (item: Item) => Promise<void>,
+  ) => {
+    const queue = [...items];
+    const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+      while (queue.length > 0) {
+        const item = queue.shift();
+        if (item === undefined) {
+          return;
+        }
+        await worker(item);
+      }
+    });
+
+    await Promise.all(workers);
+  };
 
   const handleDocRefChange = (value: string) => {
     setDocRef(value);
@@ -141,13 +193,21 @@ export default function MainArea({ module }: MainAreaProps) {
     setError(null);
     setTickets([]);
     setHasSearched(true);
+    setCurrentDocRef(null);
+    setCurrentDocId(null);
+    setCurrentStartedAt(Date.now());
 
     const errors: string[] = [];
     const collectedTickets: Ticket[] = [];
+    const timeoutMs = 15000;
+    const concurrencyLimit = 3;
 
     try {
-      for (const docRefValue of docRefs) {
+      await runWithConcurrency(docRefs, concurrencyLimit, async (docRefValue) => {
         try {
+          setCurrentDocRef(docRefValue);
+          setCurrentDocId(null);
+          setCurrentStartedAt(Date.now());
           const documentsUrl = `/api/case/documents?${new URLSearchParams({
             caseNum: "",
             procNum: "",
@@ -166,7 +226,11 @@ export default function MainArea({ module }: MainAreaProps) {
             documentsUrl,
             startedAtMs: documentsStart,
           });
-          const documentsResponse = await fetch(documentsUrl);
+          const documentsResponse = await fetchWithTimeout(
+            documentsUrl,
+            undefined,
+            timeoutMs,
+          );
           console.info("Документы: ответ", {
             docRef: docRefValue,
             dbId: normalizedDbId,
@@ -196,11 +260,14 @@ export default function MainArea({ module }: MainAreaProps) {
           const docIds = extractDocIds(documentsPayload);
 
           if (docIds.length === 0) {
-            continue;
+            return;
           }
 
           for (const docId of docIds) {
             try {
+              setCurrentDocRef(docRefValue);
+              setCurrentDocId(docId);
+              setCurrentStartedAt(Date.now());
               const ticketsStart = performance.now();
               console.info("Билеты: старт запроса", {
                 docRef: docRefValue,
@@ -209,7 +276,11 @@ export default function MainArea({ module }: MainAreaProps) {
                 documentsUrl,
                 startedAtMs: ticketsStart,
               });
-              const ticketsResponse = await fetch(`/api/case/doc/${docId}/tickets`);
+              const ticketsResponse = await fetchWithTimeout(
+                `/api/case/doc/${docId}/tickets`,
+                undefined,
+                timeoutMs,
+              );
               console.info("Билеты: ответ", {
                 docRef: docRefValue,
                 dbId: normalizedDbId,
@@ -264,9 +335,11 @@ export default function MainArea({ module }: MainAreaProps) {
               : "Неизвестная ошибка";
           errors.push(`${docRefValue}: ${message}`);
         }
-      }
+      });
     } finally {
       setLoading(false);
+      setCurrentDocRef(null);
+      setCurrentDocId(null);
     }
 
     if (errors.length > 0) {
@@ -278,6 +351,16 @@ export default function MainArea({ module }: MainAreaProps) {
 
   return (
     <main>
+      {hasSearched && (
+        <div className="request-status">
+          <p>
+            Текущий docRef:{" "}
+            {currentDocRef ? currentDocRef : loading ? "ожидание..." : "—"}
+          </p>
+          <p>Текущий docId: {currentDocId ? currentDocId : "—"}</p>
+          <p>Таймер: {loading ? `${elapsedSeconds} сек.` : "—"}</p>
+        </div>
+      )}
       <div className="main-grid">
         <ModuleView module={module} tickets={tickets} />
         <RequestPanel
