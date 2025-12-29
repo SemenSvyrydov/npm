@@ -234,9 +234,9 @@ export default function MainArea({ module }: MainAreaProps) {
     const emptyTickets: string[] = [];
     const collectedTickets: Ticket[] = [];
     const timeoutMs = CASE_API_TIMEOUT_MS;
-    const concurrencyLimit = docRefConcurrency;
-    const docRefConcurrency = 1;
-    const docIdConcurrency = 3;
+const docRefConcurrency = 1;
+const docIdConcurrency = 3;
+const concurrencyLimit = docRefConcurrency;
     try {
       await runWithConcurrency(docRefs, docRefConcurrency, async (docRefValue) => {
         let docRefSucceeded = false;
