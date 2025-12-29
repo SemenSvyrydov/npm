@@ -2,22 +2,30 @@ import type { Module } from "@/lib/types";
 
 type ModuleViewProps = {
   module: Module;
+  tickets: Array<{
+    TICKET_ID: string;
+    REF_ID: string;
+    CASE_NUMBER: string;
+    DESCRIPTION: string;
+    DT_STATUS: string;
+    DELIVERED_AT: string;
+    USER_NAME: string;
+    CODE: string;
+  }>;
 };
 
-const sampleRows = [
-  {
-    status: "готово",
-    owner: "аналитика",
-    updatedAt: "сегодня"
-  },
-  {
-    status: "в процессе",
-    owner: "отчеты",
-    updatedAt: "2 часа назад"
-  }
-];
+const ticketColumns = [
+  "TICKET_ID",
+  "REF_ID",
+  "CASE_NUMBER",
+  "DESCRIPTION",
+  "DT_STATUS",
+  "DELIVERED_AT",
+  "USER_NAME",
+  "CODE"
+] as const;
 
-export default function ModuleView({ module }: ModuleViewProps) {
+export default function ModuleView({ module, tickets }: ModuleViewProps) {
   return (
     <section className="card">
       <h2>{module.name}</h2>
@@ -32,19 +40,30 @@ export default function ModuleView({ module }: ModuleViewProps) {
       <table className="table">
         <thead>
           <tr>
-            {module.resultSchema.map((column) => (
+            {ticketColumns.map((column) => (
               <th key={column}>{column}</th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {sampleRows.map((row) => (
-            <tr key={`${row.owner}-${row.status}`}>
-              <td>{row.status}</td>
-              <td>{row.owner}</td>
-              <td>{row.updatedAt}</td>
+          {tickets.length === 0 ? (
+            <tr>
+              <td colSpan={ticketColumns.length}>Нет данных</td>
             </tr>
-          ))}
+          ) : (
+            tickets.map((ticket, index) => (
+              <tr key={ticket.TICKET_ID || `${ticket.REF_ID}-${index}`}>
+                <td>{ticket.TICKET_ID}</td>
+                <td>{ticket.REF_ID}</td>
+                <td>{ticket.CASE_NUMBER}</td>
+                <td>{ticket.DESCRIPTION}</td>
+                <td>{ticket.DT_STATUS}</td>
+                <td>{ticket.DELIVERED_AT}</td>
+                <td>{ticket.USER_NAME}</td>
+                <td>{ticket.CODE}</td>
+              </tr>
+            ))
+          )}
         </tbody>
       </table>
     </section>
