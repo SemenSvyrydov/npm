@@ -140,23 +140,28 @@ export default function RequestPanel({
         <div className="request-panel__results">
           <div className="request-panel__results-header">
             <h4>{t("requestPanel.ticketsTitle")}</h4>
-            <button
-              type="button"
-              className={`tab-button request-panel__copy-button ${
-                copyState === "success"
-                  ? "request-panel__copy-button--success"
-                  : copyState === "error"
-                  ? "request-panel__copy-button--error"
-                  : ""
-              }`}
-              onClick={handleCopyTickets}
-            >
-              {copyState === "success"
-                ? t("requestPanel.copySuccess")
-                : copyState === "error"
-                ? t("requestPanel.copyError")
-                : t("requestPanel.copyAll")}
-            </button>
+            <div className="request-panel__copy-actions">
+              <button
+                type="button"
+                className="tab-button request-panel__copy-button"
+                onClick={handleCopyTickets}
+              >
+                {t("requestPanel.copyAll")}
+              </button>
+              {copyState !== "idle" && (
+                <span
+                  className={`request-panel__copy-state ${
+                    copyState === "success"
+                      ? "request-panel__copy-state--success"
+                      : "request-panel__copy-state--error"
+                  }`}
+                >
+                  {copyState === "success"
+                    ? t("requestPanel.copySuccess")
+                    : t("requestPanel.copyError")}
+                </span>
+              )}
+            </div>
           </div>
           <p className="request-panel__results-count">
             {t("requestPanel.ticketsCount", { count: tickets.length })}
