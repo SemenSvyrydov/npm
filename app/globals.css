@@ -455,3 +455,31 @@ main {
     text-align: left;
   }
 }
+
+@media (max-width: 600px) {
+  .request-panel__results-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .request-panel__results-header h4 {
+    font-size: 15px;
+  }
+
+  .request-panel__copy-actions {
+    width: 100%;
+    gap: 6px;
+  }
+
+  .request-panel__copy-button {
+    min-width: 0;
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .request-panel__copy-state {
+    padding: 3px 8px;
+    font-size: 11px;
+  }
+}
