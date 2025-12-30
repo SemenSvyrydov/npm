@@ -253,9 +253,26 @@ main {
   border-top: 1px solid #e2e8f0;
 }
 
+.request-progress__report-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
 .request-progress__report h4 {
   margin: 0 0 8px;
   font-size: 16px;
+}
+
+.request-progress__report-header h4 {
+  margin: 0;
+}
+
+.request-progress__copy-button {
+  min-width: 220px;
 }
 
 .request-progress__errors {
