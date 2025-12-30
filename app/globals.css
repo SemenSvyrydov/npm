@@ -272,6 +272,12 @@ main {
   font-size: 13px;
 }
 
+.request-progress__empty-item {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  white-space: pre-wrap;
+}
+
 .request-panel__inputs {
   display: grid;
   gap: 12px;
