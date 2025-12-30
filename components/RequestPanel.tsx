@@ -39,6 +39,11 @@ export default function RequestPanel({
   const [copyState, setCopyState] = useState<"idle" | "success" | "error">(
     "idle",
   );
+  const uniqueTicketCount = new Set(
+    tickets
+      .map((ticket) => ticket.TICKET_ID)
+      .filter((ticketId) => ticketId != null && ticketId !== ""),
+  ).size;
 
   const handleCopyTickets = async () => {
     if (tickets.length === 0) {
@@ -161,6 +166,11 @@ export default function RequestPanel({
           </div>
           <p className="request-panel__results-count">
             {t("requestPanel.ticketsCount", { count: tickets.length })}
+            <span className="request-panel__results-secondary">
+              {t("requestPanel.ticketsUniqueCount", {
+                count: uniqueTicketCount,
+              })}
+            </span>
           </p>
           <p className="request-panel__results-hint">
             {t("requestPanel.copyHint")}
