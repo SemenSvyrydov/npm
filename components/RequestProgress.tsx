@@ -176,7 +176,9 @@ export default function RequestProgress({
             <ul className="request-progress__empty">
               {emptyTickets.map((item, index) => (
                 <li key={`${item}-${index}`}>
-                  {t("requestProgress.emptyTicketsItem", { item })}
+                  <code className="request-progress__empty-item">
+                    {t("requestProgress.emptyTicketsItem", { item })}
+                  </code>
                 </li>
               ))}
             </ul>
