@@ -157,6 +157,7 @@ export default function RequestPanel({
                 ? t("requestPanel.copyError")
                 : t("requestPanel.copyAll")}
             </button>
+
           </div>
           <p className="request-panel__results-count">
             {t("requestPanel.ticketsCount", { count: tickets.length })}
