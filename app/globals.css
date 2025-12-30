@@ -335,10 +335,25 @@ main {
   font-size: 13px;
 }
 
-.request-panel__empty {
+.request-panel__empty-state {
   margin-top: 12px;
-  font-size: 13px;
-  color: #475569;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px dashed #cbd5f5;
+  background: #f8fafc;
+}
+
+.request-panel__empty-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.request-panel__empty-hint {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: #64748b;
 }
 
 .request-panel__results {

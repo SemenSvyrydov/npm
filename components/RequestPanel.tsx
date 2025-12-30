@@ -138,7 +138,14 @@ export default function RequestPanel({
       {error && <p className="request-panel__error">{error}</p>}
 
       {hasSearched && !loading && tickets.length === 0 && !error && (
-        <p className="request-panel__empty">{t("requestPanel.noResults")}</p>
+        <div className="request-panel__empty-state">
+          <h4 className="request-panel__empty-title">
+            {t("requestPanel.noResultsTitle")}
+          </h4>
+          <p className="request-panel__empty-hint">
+            {t("requestPanel.noResultsHint")}
+          </p>
+        </div>
       )}
 
       {tickets.length > 0 && (

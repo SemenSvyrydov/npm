@@ -35,7 +35,8 @@ const translations = {
     "requestPanel.submitIdle": "Выполнить запрос",
     "requestPanel.hint":
       "Долгие запросы могут выполняться до {seconds} сек. — это нормально.",
-    "requestPanel.noResults": "Нет результатов.",
+    "requestPanel.noResultsTitle": "Тикеты не найдены",
+    "requestPanel.noResultsHint": "Проверьте docRef и dbId.",
     "requestPanel.ticketsTitle": "Тикеты",
     "requestPanel.copySuccess": "Скопировано",
     "requestPanel.copyError": "Ошибка копирования",
@@ -114,7 +115,8 @@ const translations = {
     "requestPanel.submitIdle": "Виконати запит",
     "requestPanel.hint":
       "Тривалі запити можуть виконуватися до {seconds} сек. — це нормально.",
-    "requestPanel.noResults": "Немає результатів.",
+    "requestPanel.noResultsTitle": "Тікети не знайдені",
+    "requestPanel.noResultsHint": "Перевірте docRef і dbId.",
     "requestPanel.ticketsTitle": "Тікети",
     "requestPanel.copySuccess": "Скопійовано",
     "requestPanel.copyError": "Помилка копіювання",
