@@ -35,10 +35,29 @@ export default function RequestProgress({
   emptyTickets,
 }: RequestProgressProps) {
   const { t } = useLocale();
+  const hasEmptyTickets = emptyTickets.length > 0;
 
   if (!visible) {
     return null;
   }
+
+  const handleCopyEmptyTickets = async () => {
+    if (!hasEmptyTickets) {
+      return;
+    }
+
+    const payload = emptyTickets.join("\n");
+
+    if (!payload) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(payload);
+    } catch (copyError) {
+      console.error(copyError);
+    }
+  };
 
   const formatCount = (current: number, total: number) =>
     total > 0
@@ -144,7 +163,17 @@ export default function RequestProgress({
 
       {reportReady && (
         <div className="request-progress__report">
-          <h4>{t("requestProgress.reportTitle")}</h4>
+          <div className="request-progress__report-header">
+            <h4>{t("requestProgress.reportTitle")}</h4>
+            <button
+              type="button"
+              className="button-primary request-progress__copy-button"
+              onClick={handleCopyEmptyTickets}
+              disabled={!hasEmptyTickets}
+            >
+              {t("requestProgress.copyEmptyTickets")}
+            </button>
+          </div>
           <p>
             {t("requestProgress.reportDocRef", {
               current: progress.successDocRefs,
@@ -172,7 +201,7 @@ export default function RequestProgress({
               ))}
             </ul>
           )}
-          {emptyTickets.length > 0 && (
+          {hasEmptyTickets && (
             <ul className="request-progress__empty">
               {emptyTickets.map((item, index) => (
                 <li key={`${item}-${index}`}>
